@@ -1,17 +1,19 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Tree Maker - Interactive & Unlimited</title>
+    <title>Interactive Family Tree Maker</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for Icons -->
+    <!-- D3.js v7 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -19,15 +21,6 @@
                 extend: {
                     fontFamily: {
                         sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                        }
                     }
                 }
             }
@@ -35,7 +28,7 @@
     </script>
 
     <style>
-        /* Custom scrollbars and canvas styling */
+        /* Custom Scrollbars */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -48,108 +41,142 @@
             border-radius: 3px;
         }
         
-        .tree-grid-bg {
-            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-            background-size: 24px 24px;
+        /* Grid Canvas Background */
+        .grid-bg {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px);
+            background-size: 28px 28px;
         }
 
+        /* Card Styling & Interactions */
         .node-card {
-            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s ease, border-color 0.15s ease;
             user-select: none;
         }
 
         .node-card:hover {
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px -6px rgba(0, 0, 0, 0.7), 0 8px 12px -8px rgba(0, 0, 0, 0.5);
         }
 
-        /* Prevent text selection during drag/pan */
+        .first-selected-ring {
+            box-shadow: 0 0 0 3px #f59e0b, 0 10px 25px -5px rgba(245, 158, 11, 0.5);
+        }
+
+        .second-selected-ring {
+            box-shadow: 0 0 0 3px #10b981, 0 10px 25px -5px rgba(16, 185, 129, 0.5);
+        }
+
         .no-select {
             user-select: none;
             -webkit-user-select: none;
+        }
+
+        .svg-label-bg {
+            fill: #0f172a;
+            rx: 6;
         }
     </style>
 </head>
 <body class="h-full overflow-hidden flex flex-col font-sans antialiased bg-slate-950 text-slate-100">
 
-    <!-- TOP NAVBAR / TOOLBAR -->
+    <!-- HEADER TOOLBAR -->
     <header class="h-16 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 flex items-center justify-between z-30 shrink-0">
-        <!-- App Title & Stats -->
+        <!-- Title & Member Count -->
         <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xl">
-                <i class="fa-solid font-tree text-lg"></i>
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xl shadow-inner">
                 <i class="fa-solid fa-diagram-project"></i>
             </div>
             <div>
                 <div class="flex items-center space-x-2">
                     <input id="treeTitleInput" type="text" value="My Family Tree" 
-                           class="bg-transparent font-bold text-slate-100 text-lg focus:outline-none focus:bg-slate-800/60 focus:ring-1 focus:ring-emerald-500 rounded px-1.5 py-0.5 transition"
-                           title="Click to rename tree" />
-                    <span id="memberCountBadge" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700/50">0 Members</span>
+                           class="bg-transparent font-extrabold text-slate-100 text-base sm:text-lg focus:outline-none focus:bg-slate-800/80 focus:ring-1 focus:ring-emerald-500 rounded px-1.5 py-0.5 transition"
+                           title="Click to rename" />
+                    <span id="memberCountBadge" class="text-[11px] bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-full border border-slate-700/60 font-semibold">0 Members</span>
                 </div>
-                <p class="text-xs text-slate-400 pl-1.5">100% Free & Unlimited • Auto-saved locally</p>
+                <p class="text-[11px] text-slate-400 pl-1.5 hidden sm:block">Ctrl+Click 2 cards, then press <kbd class="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-200">Ctrl+S</kbd> or <kbd class="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-200">Enter</kbd> to link</p>
             </div>
         </div>
 
-        <!-- Search Bar -->
-        <div class="hidden md:flex items-center relative w-64">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs"></i>
-            <input id="searchInput" type="text" placeholder="Search relatives..." 
-                   class="w-full bg-slate-800/80 text-xs text-slate-200 placeholder-slate-400 pl-9 pr-3 py-2 rounded-lg border border-slate-700/60 focus:outline-none focus:border-emerald-500 transition" />
-            <div id="searchResults" class="hidden absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto z-50"></div>
+        <!-- Selection Banner Indicator -->
+        <div id="selectionStatusBanner" class="hidden md:flex items-center bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-xs space-x-2 shadow-lg">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span id="selectionText" class="text-slate-200 font-medium">0 cards selected</span>
+            <button id="triggerLinkShortcutBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1 rounded-lg text-[11px] shadow transition flex items-center space-x-1 ml-2">
+                <i class="fa-solid fa-link"></i>
+                <span>Link (Ctrl+S)</span>
+            </button>
+            <button id="clearSelectionBtn" class="text-slate-400 hover:text-slate-200 p-1" title="Clear Selection">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
 
-        <!-- Action Controls -->
+        <!-- Search Bar -->
+        <div class="hidden lg:flex items-center relative w-52">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs"></i>
+            <input id="searchInput" type="text" placeholder="Find relative..." 
+                   class="w-full bg-slate-800/80 text-xs text-slate-200 placeholder-slate-400 pl-9 pr-3 py-2 rounded-xl border border-slate-700/70 focus:outline-none focus:border-emerald-500 transition" />
+            <div id="searchResults" class="hidden absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50"></div>
+        </div>
+
+        <!-- Device Session Badge & Action Controls -->
         <div class="flex items-center space-x-2">
-            <button id="addRootBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 shadow-lg shadow-emerald-900/20 transition">
-                <i class="fa-solid fa-user-plus"></i>
-                <span class="hidden sm:inline">Add Member</span>
+            <!-- Device Link Status Button -->
+            <button id="openDeviceModalBtn" class="bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/60 text-xs px-2.5 py-2 rounded-xl flex items-center space-x-1.5 transition">
+                <i class="fa-solid fa-mobile-screen-button text-indigo-400"></i>
+                <span id="deviceBadgeText" class="hidden xl:inline font-semibold">Device: Unlinked</span>
             </button>
 
-            <button id="autoLayoutBtn" title="Auto Align Layout" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-700 flex items-center space-x-1.5 transition">
+            <button id="addMemberBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center space-x-1.5 shadow-lg shadow-emerald-900/20 transition">
+                <i class="fa-solid fa-user-plus"></i>
+                <span class="hidden sm:inline">Add Person</span>
+            </button>
+
+            <button id="autoLayoutBtn" title="Auto Organize Tree Layout" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-xl border border-slate-700 flex items-center space-x-1.5 transition">
                 <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
                 <span class="hidden md:inline">Auto Layout</span>
             </button>
 
-            <div class="h-6 w-px bg-slate-800 my-auto hidden sm:block"></div>
+            <div class="h-5 w-px bg-slate-800 my-auto hidden sm:block"></div>
 
             <!-- Import / Export -->
-            <button id="exportJsonBtn" title="Export Tree Data as JSON File" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-2 rounded-lg border border-slate-700 flex items-center space-x-1 transition">
+            <button id="exportJsonBtn" title="Export Tree Data as JSON" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-2 rounded-xl border border-slate-700 flex items-center space-x-1 transition">
                 <i class="fa-solid fa-download text-sky-400"></i>
                 <span class="hidden lg:inline">Export</span>
             </button>
-            <label id="importJsonLabel" title="Import Tree JSON File" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-2 rounded-lg border border-slate-700 flex items-center space-x-1 cursor-pointer transition">
+            <label id="importJsonLabel" title="Import Family Tree JSON File" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-2 rounded-xl border border-slate-700 flex items-center space-x-1 cursor-pointer transition">
                 <i class="fa-solid fa-upload text-emerald-400"></i>
                 <span class="hidden lg:inline">Import</span>
                 <input type="file" id="importJsonInput" accept=".json" class="hidden" />
             </label>
 
-            <!-- Reset / Sample -->
-            <button id="presetDemoBtn" title="Load Sample Family Tree" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-2 rounded-lg border border-slate-700 transition">
+            <!-- Reset / Demo -->
+            <button id="loadDemoBtn" title="Load Sample Tree" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-2 rounded-xl border border-slate-700 transition">
                 <i class="fa-solid fa-flask text-purple-400"></i>
             </button>
-            <button id="clearTreeBtn" title="Clear Tree" class="bg-slate-800 hover:bg-rose-900/40 text-slate-400 hover:text-rose-400 text-xs px-2.5 py-2 rounded-lg border border-slate-700 hover:border-rose-800/50 transition">
+            <button id="clearTreeBtn" title="Clear Entire Tree" class="bg-slate-800 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 text-xs px-2.5 py-2 rounded-xl border border-slate-700 hover:border-rose-900/50 transition">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
     </header>
 
     <!-- MAIN CANVAS WORKSPACE -->
-    <main id="viewport" class="relative flex-1 overflow-hidden tree-grid-bg cursor-grab active:cursor-grabbing no-select">
+    <main id="viewport" class="relative flex-1 overflow-hidden grid-bg cursor-grab active:cursor-grabbing no-select">
         
         <!-- Interactive Zoomable/Pannable Workspace Container -->
         <div id="treeContainer" class="absolute top-0 left-0 origin-0 transition-transform duration-75 ease-out" style="transform: translate(0px, 0px) scale(1);">
             
-            <!-- Dynamic SVG Connectors Layer -->
+            <!-- Dynamic SVG Relationship Lines Layer -->
             <svg id="svgConnectors" class="absolute top-0 left-0 pointer-events-none overflow-visible" style="width: 50000px; height: 50000px;">
                 <defs>
-                    <linearGradient id="linkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.6"/>
-                        <stop offset="100%" stop-color="#10b981" stop-opacity="0.6"/>
-                    </linearGradient>
-                    <linearGradient id="spouseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#ec4899" stop-opacity="0.7"/>
-                        <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.7"/>
-                    </linearGradient>
+                    <marker id="arrowHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#38bdf8" />
+                    </marker>
+                    <marker id="adoptedArrowHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#a855f7" />
+                    </marker>
+                    <marker id="stepArrowHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b" />
+                    </marker>
                 </defs>
             </svg>
 
@@ -157,90 +184,262 @@
             <div id="nodesLayer" class="absolute top-0 left-0"></div>
         </div>
 
-        <!-- Empty State Prompt -->
+        <!-- Empty State Canvas Overlay -->
         <div id="emptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center p-6 text-center pointer-events-none z-10">
-            <div class="w-20 h-20 rounded-3xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-center text-slate-500 mb-4 text-3xl shadow-2xl">
+            <div class="w-20 h-20 rounded-3xl bg-slate-900/90 border border-slate-800 flex items-center justify-center text-slate-500 mb-4 text-3xl shadow-2xl">
                 <i class="fa-solid fa-sitemap"></i>
             </div>
-            <h2 class="text-xl font-bold text-slate-200 mb-2">Your Family Tree is Empty</h2>
-            <p class="text-sm text-slate-400 max-w-sm mb-6">Start building your family tree with unlimited members, completely free.</p>
+            <h2 class="text-xl font-bold text-slate-200 mb-2">No Family Members Yet</h2>
+            <p class="text-xs text-slate-400 max-w-sm mb-6">Create your first family member or load a sample tree to explore the interactive linking tools.</p>
             <div class="flex items-center space-x-3 pointer-events-auto">
-                <button id="emptyAddBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-lg transition">
-                    <i class="fa-solid fa-plus mr-2"></i>Create First Ancestor
+                <button id="emptyAddBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg transition flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add First Ancestor</span>
                 </button>
-                <button id="emptyDemoBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium px-5 py-2.5 rounded-xl border border-slate-700 transition">
+                <button id="emptyDemoBtn" class="bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-medium px-5 py-2.5 rounded-xl border border-slate-800 transition">
                     Load Demo Tree
                 </button>
             </div>
         </div>
 
-        <!-- Floating Zoom & Navigation Controls -->
-        <div class="absolute bottom-6 right-6 flex flex-col space-y-2 z-20">
-            <div class="bg-slate-900/90 border border-slate-800 backdrop-blur rounded-xl shadow-xl p-1 flex flex-col space-y-1">
-                <button id="zoomInBtn" title="Zoom In" class="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                    <i class="fa-solid fa-plus"></i>
-                </button>
-                <button id="zoomResetBtn" title="Reset View" class="w-9 h-9 flex items-center justify-center text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                    100%
-                </button>
-                <button id="zoomOutBtn" title="Zoom Out" class="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                    <i class="fa-solid fa-minus"></i>
+        <!-- FLOATING CONTROLS & SHORTCUT GUIDE -->
+        <div class="absolute bottom-6 left-6 right-6 flex items-end justify-between pointer-events-none z-20">
+            
+            <!-- Shortcut Toast Banner -->
+            <div class="bg-slate-900/90 border border-slate-800 backdrop-blur px-4 py-2.5 rounded-2xl shadow-2xl text-xs text-slate-300 flex items-center space-x-3 pointer-events-auto">
+                <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm shrink-0">
+                    <i class="fa-solid fa-keyboard"></i>
+                </div>
+                <div>
+                    <p class="font-semibold text-slate-200">Linking Shortcut</p>
+                    <p class="text-[11px] text-slate-400">Hold <kbd class="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-200">Ctrl/Cmd</kbd> + click Person 1 then Person 2, then press <kbd class="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-200">Ctrl+S</kbd> or <kbd class="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-200">Enter</kbd>!</p>
+                </div>
+            </div>
+
+            <!-- Zoom Controls -->
+            <div class="flex flex-col space-y-2 pointer-events-auto">
+                <div class="bg-slate-900/90 border border-slate-800 backdrop-blur rounded-2xl shadow-xl p-1 flex flex-col space-y-1">
+                    <button id="zoomInBtn" title="Zoom In (+)" class="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <button id="zoomResetBtn" title="Reset Zoom to 100%" class="w-9 h-9 flex items-center justify-center text-[11px] font-bold text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition">
+                        100%
+                    </button>
+                    <button id="zoomOutBtn" title="Zoom Out (-)" class="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                </div>
+                <button id="fitViewBtn" title="Fit Tree to Viewport" class="w-11 h-11 bg-slate-900/90 border border-slate-800 backdrop-blur rounded-2xl shadow-xl flex items-center justify-center text-slate-300 hover:text-emerald-400 hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-expand"></i>
                 </button>
             </div>
-            <button id="fitViewBtn" title="Fit Entire Tree to Screen" class="w-11 h-11 bg-slate-900/90 border border-slate-800 backdrop-blur rounded-xl shadow-xl flex items-center justify-center text-slate-300 hover:text-emerald-400 hover:bg-slate-800 transition">
-                <i class="fa-solid fa-expand"></i>
-            </button>
-        </div>
-
-        <!-- Hint Toast -->
-        <div class="absolute bottom-6 left-6 z-20 hidden md:flex items-center space-x-2 bg-slate-900/80 border border-slate-800/80 backdrop-blur px-3 py-2 rounded-lg text-xs text-slate-400">
-            <i class="fa-solid fa-hand-pointer text-emerald-400"></i>
-            <span>Drag canvas to pan • Scroll to zoom • Drag cards to position</span>
         </div>
     </main>
 
-    <!-- PERSON EDIT / ADD MODAL -->
-    <div id="personModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-200">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <!-- LINK RELATIONSHIP MODAL ("What do you want to do?") -->
+    <div id="linkModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
             
             <!-- Modal Header -->
-            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <div id="modalHeaderIcon" class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
-                        <i class="fa-solid fa-user-pen"></i>
+            <div class="px-6 py-4 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-base">
+                        <i class="fa-solid fa-link"></i>
                     </div>
-                    <h3 id="modalTitle" class="font-bold text-slate-100 text-base">Edit Relative Details</h3>
+                    <div>
+                        <h3 class="font-bold text-slate-100 text-base">What do you want to do?</h3>
+                        <p class="text-[11px] text-slate-400">Choose how to connect selected relatives</p>
+                    </div>
                 </div>
-                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-200 w-8 h-8 rounded-lg hover:bg-slate-800 flex items-center justify-center transition">
+                <button id="closeLinkModalBtn" class="text-slate-400 hover:text-slate-200 w-8 h-8 rounded-xl hover:bg-slate-800 flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <!-- Modal Body (Form) -->
-            <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300">
+            <!-- Selection Preview Header -->
+            <div class="p-4 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2 flex-1 min-w-0">
+                    <div class="bg-amber-500/20 text-amber-400 px-2 py-1 rounded-lg font-bold text-[11px] shrink-0">1️⃣ Person A</div>
+                    <span id="linkPerson1Name" class="font-bold text-slate-200 truncate">Person 1</span>
+                </div>
                 
-                <!-- Basic Info Row -->
-                <div class="grid grid-cols-1 gap-4">
+                <button id="swapLinkOrderBtn" class="mx-2 text-slate-400 hover:text-amber-400 p-2 hover:bg-slate-800 rounded-xl transition shrink-0" title="Swap Order (Person A ↔ Person B)">
+                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                </button>
+
+                <div class="flex items-center space-x-2 flex-1 min-w-0 justify-end">
+                    <span id="linkPerson2Name" class="font-bold text-slate-200 truncate text-right">Person 2</span>
+                    <div class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg font-bold text-[11px] shrink-0">2️⃣ Person B</div>
+                </div>
+            </div>
+
+            <!-- Relationship Choices Grid -->
+            <div class="p-5 space-y-2 max-h-[60vh] overflow-y-auto text-xs">
+                <p class="text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-wider">Select Relationship Type:</p>
+
+                <!-- Biological Parent -> Child -->
+                <button data-rel="parent-child" class="link-option-btn w-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500 p-3.5 rounded-2xl flex items-center justify-between transition group text-left">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-child"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-200 text-sm">Biological Parent ➔ Child</div>
+                            <div class="text-[11px] text-slate-400"><span id="p1BioName" class="text-slate-300">Person A</span> is biological parent of <span id="p2BioName" class="text-slate-300">Person B</span></div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-emerald-400 transition"></i>
+                </button>
+
+                <!-- Adopted Child -->
+                <button data-rel="adopted-child" class="link-option-btn w-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-purple-500 p-3.5 rounded-2xl flex items-center justify-between transition group text-left">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-certificate"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-200 text-sm">Adopted Parent ➔ Child</div>
+                            <div class="text-[11px] text-slate-400"><span id="p1AdoptName" class="text-slate-300">Person A</span> is adoptive parent of <span id="p2AdoptName" class="text-slate-300">Person B</span></div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-purple-400 transition"></i>
+                </button>
+
+                <!-- Step Child -->
+                <button data-rel="step-child" class="link-option-btn w-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500 p-3.5 rounded-2xl flex items-center justify-between transition group text-left">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-people-roof"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-200 text-sm">Step-Parent ➔ Step-Child</div>
+                            <div class="text-[11px] text-slate-400"><span id="p1StepName" class="text-slate-300">Person A</span> is step-parent of <span id="p2StepName" class="text-slate-300">Person B</span></div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-amber-400 transition"></i>
+                </button>
+
+                <!-- Spouse / Partner -->
+                <button data-rel="spouse" class="link-option-btn w-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-rose-500 p-3.5 rounded-2xl flex items-center justify-between transition group text-left">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-200 text-sm">Spouse / Partner</div>
+                            <div class="text-[11px] text-slate-400">Link as married spouses or life partners</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-rose-400 transition"></i>
+                </button>
+
+                <!-- Full Siblings -->
+                <button data-rel="sibling" class="link-option-btn w-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-sky-500 p-3.5 rounded-2xl flex items-center justify-between transition group text-left">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-people-hold"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-200 text-sm">Full Siblings</div>
+                            <div class="text-[11px] text-slate-400">Connect Person A and Person B as siblings</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-sky-400 transition"></i>
+                </button>
+
+                <!-- Unlink / Remove Links -->
+                <button data-rel="unlink" class="link-option-btn w-full bg-rose-950/20 hover:bg-rose-950/40 border border-rose-900/50 p-3 rounded-2xl flex items-center justify-between transition group text-left mt-2">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-link-slash"></i>
+                        </div>
+                        <div class="font-semibold text-rose-300 text-xs">Unlink / Remove Connections</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEVICE / BROWSER LINKING MODAL -->
+    <div id="deviceModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center text-base">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                    </div>
                     <div>
-                        <label class="block text-slate-400 mb-1 font-medium">Full Name <span class="text-rose-400">*</span></label>
-                        <input id="editName" type="text" placeholder="e.g. Eleanor Vance" 
-                               class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 transition text-sm" />
+                        <h3 class="font-bold text-slate-100 text-base">Link This Device</h3>
+                        <p class="text-[11px] text-slate-400">Assign this device/browser session to a person</p>
                     </div>
                 </div>
+                <button id="closeDeviceModalBtn" class="text-slate-400 hover:text-slate-200 w-8 h-8 rounded-xl hover:bg-slate-800 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
 
-                <!-- Gender & Role Row -->
+            <div class="p-6 space-y-4 text-xs text-slate-300">
+                <div>
+                    <label class="block text-slate-400 mb-1 font-medium">Device Nickname</label>
+                    <input id="deviceNameInput" type="text" placeholder="e.g. My Laptop, Dad's Phone" 
+                           class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 transition text-sm font-semibold" />
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 mb-1 font-medium">Link Device to Person in Tree</label>
+                    <select id="devicePersonSelect" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 transition text-sm">
+                        <option value="">-- Unlinked / No Person --</option>
+                    </select>
+                    <p class="text-[10px] text-slate-500 mt-1">This attaches a "📱 THIS DEVICE" tag to their card in your browser session without needing server accounts.</p>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-900/50 border-t border-slate-800 flex items-center justify-end space-x-2">
+                <button id="clearDeviceLinkBtn" type="button" class="text-rose-400 hover:text-rose-300 text-xs px-3 py-2 rounded-xl transition">
+                    Unlink
+                </button>
+                <button id="saveDeviceLinkBtn" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-5 py-2 rounded-xl shadow-lg transition">
+                    Save Device Tag
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PERSON EDIT / DETAILS MODAL -->
+    <div id="personModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-user-pen"></i>
+                    </div>
+                    <h3 id="modalTitle" class="font-bold text-slate-100 text-base">Edit Person Details</h3>
+                </div>
+                <button id="closePersonModalBtn" class="text-slate-400 hover:text-slate-200 w-8 h-8 rounded-xl hover:bg-slate-800 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300">
+                <div>
+                    <label class="block text-slate-400 mb-1 font-medium">Full Name <span class="text-rose-400">*</span></label>
+                    <input id="editName" type="text" placeholder="e.g. Johnathan Smith" 
+                           class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" />
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-slate-400 mb-1 font-medium">Gender / Identity</label>
-                        <select id="editGender" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
-                            <option value="female">Female</option>
-                            <option value="male">Male</option>
-                            <option value="other">Other / Non-binary</option>
+                        <select id="editGender" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
+                            <option value="male">Male 👨</option>
+                            <option value="female">Female 👩</option>
+                            <option value="other">Non-binary / Other 👤</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 font-medium">Card Accent Color</label>
-                        <select id="editColor" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
+                        <select id="editColor" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
                             <option value="emerald">Emerald Green</option>
                             <option value="sky">Sky Blue</option>
                             <option value="purple">Royal Purple</option>
@@ -251,85 +450,74 @@
                     </div>
                 </div>
 
-                <!-- Lifespan Row -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-slate-400 mb-1 font-medium">Birth Year</label>
-                        <input id="editBirthYear" type="text" placeholder="e.g. 1954" 
-                               class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 transition" />
+                        <input id="editBirthYear" type="text" placeholder="e.g. 1952" 
+                               class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition" />
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1 font-medium">Death Year (Leave blank if living)</label>
-                        <input id="editDeathYear" type="text" placeholder="e.g. 2021" 
-                               class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 transition" />
+                        <input id="editDeathYear" type="text" placeholder="e.g. 2020" 
+                               class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition" />
                     </div>
                 </div>
 
-                <!-- Title / Profession -->
                 <div>
                     <label class="block text-slate-400 mb-1 font-medium">Title / Profession / Nickname</label>
-                    <input id="editTitle" type="text" placeholder="e.g. Architect, Great-Grandma" 
-                           class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 transition" />
+                    <input id="editTitle" type="text" placeholder="e.g. Doctor, Great-Grandma" 
+                           class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition" />
                 </div>
 
-                <!-- Avatar Emoji / Custom Icon -->
                 <div>
-                    <label class="block text-slate-400 mb-1 font-medium">Avatar Emoji / Icon</label>
-                    <div class="flex space-x-2">
-                        <input id="editAvatar" type="text" placeholder="e.g. 👩, 👨, 👵, 👴, 👑, 🌿" 
-                               class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 transition text-base" />
-                    </div>
+                    <label class="block text-slate-400 mb-1 font-medium">Avatar Emoji or Icon</label>
+                    <input id="editAvatar" type="text" placeholder="e.g. 👴, 👵, 👨‍⚕️, 👑, 🌿" 
+                           class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition text-base" />
                 </div>
 
-                <!-- Notes / Bio -->
                 <div>
-                    <label class="block text-slate-400 mb-1 font-medium">Notes & Memories</label>
-                    <textarea id="editNotes" rows="3" placeholder="Add birth place, stories, or family lore..." 
-                              class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 transition resize-none"></textarea>
+                    <label class="block text-slate-400 mb-1 font-medium">Notes & Family Stories</label>
+                    <textarea id="editNotes" rows="3" placeholder="Add birth place, stories, or history..." 
+                              class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition resize-none"></textarea>
                 </div>
 
-                <!-- Manage Relationships Section -->
                 <div class="pt-3 border-t border-slate-800">
                     <label class="block text-slate-300 mb-2 font-semibold flex items-center justify-between">
                         <span>Connected Relationships</span>
-                        <span class="text-[10px] text-slate-500">Auto-linked</span>
                     </label>
                     <div id="relationshipsList" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
                 </div>
-
             </div>
 
-            <!-- Modal Footer -->
             <div class="px-6 py-4 bg-slate-900/50 border-t border-slate-800 flex items-center justify-between">
-                <button id="deletePersonBtn" type="button" class="text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 text-xs px-3 py-2 rounded-lg border border-rose-900/50 transition flex items-center space-x-1.5">
+                <button id="deletePersonBtn" type="button" class="text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 text-xs px-3 py-2 rounded-xl border border-rose-900/50 transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-trash-can"></i>
                     <span>Delete Person</span>
                 </button>
 
                 <div class="flex items-center space-x-2">
-                    <button id="cancelModalBtn" type="button" class="text-slate-400 hover:text-slate-200 text-xs px-4 py-2 rounded-lg hover:bg-slate-800 transition">
+                    <button id="cancelPersonModalBtn" type="button" class="text-slate-400 hover:text-slate-200 text-xs px-4 py-2 rounded-xl hover:bg-slate-800 transition">
                         Cancel
                     </button>
-                    <button id="savePersonBtn" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-5 py-2 rounded-lg shadow-lg shadow-emerald-900/30 transition">
+                    <button id="savePersonBtn" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-5 py-2 rounded-xl shadow-lg transition">
                         Save Changes
                     </button>
                 </div>
             </div>
-
         </div>
     </div>
 
-    <!-- ADD RELATION CHOICE MODAL -->
-    <div id="addRelationModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
+    <!-- QUICK ADD RELATIVE MODAL -->
+    <div id="quickAddModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center">
             <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl mx-auto mb-3">
                 <i class="fa-solid fa-user-plus"></i>
             </div>
-            <h3 class="font-bold text-slate-100 text-base mb-1">Add Relative to <span id="addRelationTargetName" class="text-emerald-400"></span></h3>
-            <p class="text-xs text-slate-400 mb-6">Select the relationship to create:</p>
+            <h3 class="font-bold text-slate-100 text-base mb-1">Add Relative to <span id="quickAddTargetName" class="text-emerald-400"></span></h3>
+            <p class="text-xs text-slate-400 mb-6">Choose relationship to spawn new relative:</p>
 
-            <div class="grid grid-cols-1 gap-2.5 text-xs">
-                <button data-rel-type="child" class="add-rel-option bg-slate-800 hover:bg-slate-700 hover:border-emerald-500 border border-slate-700 text-slate-200 p-3 rounded-xl flex items-center justify-between transition group">
+            <div class="grid grid-cols-1 gap-2 text-xs">
+                <button data-quick-rel="child" class="quick-add-opt bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-3 rounded-2xl flex items-center justify-between transition group">
                     <span class="flex items-center space-x-2.5">
                         <i class="fa-solid fa-child text-emerald-400 text-base"></i>
                         <span class="font-semibold">Add Child</span>
@@ -337,7 +525,15 @@
                     <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-emerald-400 transition"></i>
                 </button>
 
-                <button data-rel-type="spouse" class="add-rel-option bg-slate-800 hover:bg-slate-700 hover:border-rose-500 border border-slate-700 text-slate-200 p-3 rounded-xl flex items-center justify-between transition group">
+                <button data-quick-rel="adopted-child" class="quick-add-opt bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-3 rounded-2xl flex items-center justify-between transition group">
+                    <span class="flex items-center space-x-2.5">
+                        <i class="fa-solid fa-certificate text-purple-400 text-base"></i>
+                        <span class="font-semibold">Add Adopted Child</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-purple-400 transition"></i>
+                </button>
+
+                <button data-quick-rel="spouse" class="quick-add-opt bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-3 rounded-2xl flex items-center justify-between transition group">
                     <span class="flex items-center space-x-2.5">
                         <i class="fa-solid fa-heart text-rose-400 text-base"></i>
                         <span class="font-semibold">Add Spouse / Partner</span>
@@ -345,7 +541,7 @@
                     <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-rose-400 transition"></i>
                 </button>
 
-                <button data-rel-type="parent" class="add-rel-option bg-slate-800 hover:bg-slate-700 hover:border-sky-500 border border-slate-700 text-slate-200 p-3 rounded-xl flex items-center justify-between transition group">
+                <button data-quick-rel="parent" class="quick-add-opt bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-3 rounded-2xl flex items-center justify-between transition group">
                     <span class="flex items-center space-x-2.5">
                         <i class="fa-solid fa-user-tie text-sky-400 text-base"></i>
                         <span class="font-semibold">Add Parent</span>
@@ -354,37 +550,38 @@
                 </button>
             </div>
 
-            <button id="cancelAddRelBtn" class="mt-5 text-slate-400 hover:text-slate-200 text-xs py-1.5 px-4">
+            <button id="cancelQuickAddBtn" class="mt-5 text-slate-400 hover:text-slate-200 text-xs py-1 px-4">
                 Cancel
             </button>
         </div>
     </div>
 
-    <!-- CUSTOM CONFIRM DIALOG -->
+    <!-- CONFIRMATION DIALOG -->
     <div id="confirmModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
-            <div id="confirmIcon" class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-xl mx-auto mb-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-xl mx-auto mb-3">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h3 id="confirmTitle" class="font-bold text-slate-100 text-base mb-1">Are you sure?</h3>
             <p id="confirmMessage" class="text-xs text-slate-400 mb-6">This action cannot be undone.</p>
             <div class="flex items-center justify-center space-x-3">
-                <button id="confirmCancelBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-lg border border-slate-700 transition">
+                <button id="confirmCancelBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-xl border border-slate-700 transition">
                     Cancel
                 </button>
-                <button id="confirmOkBtn" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs px-5 py-2 rounded-lg shadow-lg shadow-rose-950/50 transition">
+                <button id="confirmOkBtn" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs px-5 py-2 rounded-xl shadow-lg transition">
                     Confirm
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- APPLICATION LOGIC & GRAPH ENGINE -->
+    <!-- MAIN APP JAVASCRIPT -->
     <script>
         /**
-         * State Architecture
+         * State Model Structure & Device Linking
          */
-        const STORAGE_KEY = 'family_tree_app_data_v2';
+        const STORAGE_KEY = 'family_tree_data_v3';
+        const DEVICE_KEY = 'family_tree_device_profile_v1';
 
         let appState = {
             title: "My Family Tree",
@@ -392,35 +589,45 @@
             transform: { x: 0, y: 0, zoom: 1 }
         };
 
+        let deviceProfile = {
+            deviceName: "Primary Device",
+            linkedPersonId: null
+        };
+
+        // Selection state for Ctrl+S / Enter linking
+        let selectedMemberIds = []; // Array of selected member IDs in click order [Person A, Person B]
+        
         let currentEditingId = null;
-        let currentAddRelTargetId = null;
+        let currentQuickAddTargetId = null;
         let confirmCallback = null;
 
-        // Workspace elements
+        // Viewport elements
         const viewport = document.getElementById('viewport');
         const treeContainer = document.getElementById('treeContainer');
         const svgConnectors = document.getElementById('svgConnectors');
         const nodesLayer = document.getElementById('nodesLayer');
         const emptyState = document.getElementById('emptyState');
 
-        // Color accent definitions
+        // Color theme mapping
         const ACCENT_CLASSES = {
-            emerald: { border: 'border-emerald-500/60', bg: 'bg-emerald-500/10', text: 'text-emerald-400', badge: 'bg-emerald-950/60 text-emerald-300' },
-            sky: { border: 'border-sky-500/60', bg: 'bg-sky-500/10', text: 'text-sky-400', badge: 'bg-sky-950/60 text-sky-300' },
-            purple: { border: 'border-purple-500/60', bg: 'bg-purple-500/10', text: 'text-purple-400', badge: 'bg-purple-950/60 text-purple-300' },
-            rose: { border: 'border-rose-500/60', bg: 'bg-rose-500/10', text: 'text-rose-400', badge: 'bg-rose-950/60 text-rose-300' },
-            amber: { border: 'border-amber-500/60', bg: 'bg-amber-500/10', text: 'text-amber-400', badge: 'bg-amber-950/60 text-amber-300' },
-            slate: { border: 'border-slate-600', bg: 'bg-slate-800/50', text: 'text-slate-300', badge: 'bg-slate-800 text-slate-300' }
+            emerald: { border: 'border-emerald-500/60', bg: 'bg-emerald-500/10', text: 'text-emerald-400', tag: 'bg-emerald-950/60 text-emerald-300 border-emerald-800/50' },
+            sky: { border: 'border-sky-500/60', bg: 'bg-sky-500/10', text: 'text-sky-400', tag: 'bg-sky-950/60 text-sky-300 border-sky-800/50' },
+            purple: { border: 'border-purple-500/60', bg: 'bg-purple-500/10', text: 'text-purple-400', tag: 'bg-purple-950/60 text-purple-300 border-purple-800/50' },
+            rose: { border: 'border-rose-500/60', bg: 'bg-rose-500/10', text: 'text-rose-400', tag: 'bg-rose-950/60 text-rose-300 border-rose-800/50' },
+            amber: { border: 'border-amber-500/60', bg: 'bg-amber-500/10', text: 'text-amber-400', tag: 'bg-amber-950/60 text-amber-300 border-amber-800/50' },
+            slate: { border: 'border-slate-600', bg: 'bg-slate-800/50', text: 'text-slate-300', tag: 'bg-slate-800 text-slate-300 border-slate-700' }
         };
 
         /**
-         * INITIALIZATION & LOCALSTORAGE
+         * INIT & LOCAL STORAGE
          */
         window.addEventListener('DOMContentLoaded', () => {
             loadStateFromStorage();
+            loadDeviceProfile();
             setupPanAndZoom();
+            setupGlobalShortcuts();
             setupEventListeners();
-            
+
             if (Object.keys(appState.members).length === 0) {
                 showEmptyState(true);
             } else {
@@ -453,6 +660,37 @@
             }
         }
 
+        function loadDeviceProfile() {
+            try {
+                const savedDev = localStorage.getItem(DEVICE_KEY);
+                if (savedDev) {
+                    deviceProfile = JSON.parse(savedDev);
+                }
+                updateDeviceBadgeUI();
+            } catch (err) {
+                console.error("Failed to load device profile", err);
+            }
+        }
+
+        function saveDeviceProfile() {
+            try {
+                localStorage.setItem(DEVICE_KEY, JSON.stringify(deviceProfile));
+                updateDeviceBadgeUI();
+            } catch (err) {
+                console.error("Failed to save device profile", err);
+            }
+        }
+
+        function updateDeviceBadgeUI() {
+            const textEl = document.getElementById('deviceBadgeText');
+            if (deviceProfile.linkedPersonId && appState.members[deviceProfile.linkedPersonId]) {
+                const person = appState.members[deviceProfile.linkedPersonId];
+                textEl.textContent = `📱 ${deviceProfile.deviceName || 'Device'} (${person.name})`;
+            } else {
+                textEl.textContent = `📱 Device: Unlinked`;
+            }
+        }
+
         function updateMemberCountBadge() {
             const count = Object.keys(appState.members).length;
             document.getElementById('memberCountBadge').textContent = `${count} ${count === 1 ? 'Member' : 'Members'}`;
@@ -467,17 +705,22 @@
         }
 
         /**
-         * PAN AND ZOOM ENGINE
+         * PAN AND ZOOM LOGIC
          */
         let isPanning = false;
-        let startPanX = 0;
-        let startPanY = 0;
+        let startPanX = 0, startPanY = 0;
 
         function setupPanAndZoom() {
             viewport.addEventListener('mousedown', (e) => {
-                // Ignore click if clicking directly on a node card button/input
                 if (e.target.closest('.node-card') || e.target.closest('button') || e.target.closest('input')) return;
                 
+                // Clear selection if clicking canvas background without Ctrl key
+                if (!e.ctrlKey && !e.metaKey && selectedMemberIds.length > 0) {
+                    selectedMemberIds = [];
+                    updateSelectionUI();
+                    renderTree();
+                }
+
                 isPanning = true;
                 startPanX = e.clientX - appState.transform.x;
                 startPanY = e.clientY - appState.transform.y;
@@ -499,15 +742,14 @@
                 }
             });
 
-            // Wheel Zoom
+            // Wheel zoom
             viewport.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const zoomFactor = 0.08;
                 const delta = e.deltaY < 0 ? 1 : -1;
                 let newZoom = appState.transform.zoom + delta * zoomFactor;
-                newZoom = Math.min(Math.max(newZoom, 0.2), 2.5); // Clamp zoom
+                newZoom = Math.min(Math.max(newZoom, 0.2), 2.5);
 
-                // Zoom relative to mouse cursor
                 const rect = viewport.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
@@ -529,7 +771,6 @@
             const memberKeys = Object.keys(appState.members);
             if (memberKeys.length === 0) return;
 
-            // Calculate bounding box of all cards
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             memberKeys.forEach(id => {
                 const p = appState.members[id];
@@ -537,17 +778,17 @@
                 const y = p.y || 0;
                 minX = Math.min(minX, x);
                 minY = Math.min(minY, y);
-                maxX = Math.max(maxX, x + 220); // 220 approx node width
-                maxY = Math.max(maxY, y + 140); // 140 approx node height
+                maxX = Math.max(maxX, x + 230);
+                maxY = Math.max(maxY, y + 140);
             });
 
             const viewportWidth = viewport.clientWidth;
             const viewportHeight = viewport.clientHeight;
 
-            const treeWidth = maxX - minX;
-            const treeHeight = maxY - minY;
+            const treeWidth = Math.max(maxX - minX, 300);
+            const treeHeight = Math.max(maxY - minY, 200);
 
-            const zoom = Math.min(Math.max(Math.min((viewportWidth - 100) / treeWidth, (viewportHeight - 100) / treeHeight), 0.5), 1.1);
+            const zoom = Math.min(Math.max(Math.min((viewportWidth - 120) / treeWidth, (viewportHeight - 120) / treeHeight), 0.4), 1.1);
             
             appState.transform.zoom = zoom;
             appState.transform.x = (viewportWidth / 2) - ((minX + treeWidth / 2) * zoom);
@@ -557,7 +798,93 @@
         }
 
         /**
-         * RENDERER ENGINE
+         * GLOBAL KEYBOARD SHORTCUTS (CTRL+S / ENTER / ESC)
+         */
+        function setupGlobalShortcuts() {
+            window.addEventListener('keydown', (e) => {
+                // Check for Ctrl+S or Cmd+S
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                    e.preventDefault();
+                    triggerLinkModal();
+                    return;
+                }
+
+                // Press Enter to trigger link when 2 items selected and no modal is open
+                if (e.key === 'Enter' && selectedMemberIds.length >= 2 && isNoModalOpen()) {
+                    e.preventDefault();
+                    triggerLinkModal();
+                    return;
+                }
+
+                // Press Escape to clear selections
+                if (e.key === 'Escape') {
+                    if (selectedMemberIds.length > 0) {
+                        selectedMemberIds = [];
+                        updateSelectionUI();
+                        renderTree();
+                    }
+                }
+            });
+        }
+
+        function isNoModalOpen() {
+            return document.getElementById('linkModal').classList.contains('hidden') &&
+                   document.getElementById('personModal').classList.contains('hidden') &&
+                   document.getElementById('quickAddModal').classList.contains('hidden') &&
+                   document.getElementById('deviceModal').classList.contains('hidden');
+        }
+
+        /**
+         * CARD SELECTION LOGIC
+         */
+        function handleNodeClick(personId, event) {
+            const isMultiSelect = event.ctrlKey || event.metaKey || selectedMemberIds.length > 0;
+
+            if (isMultiSelect) {
+                const index = selectedMemberIds.indexOf(personId);
+                if (index > -1) {
+                    selectedMemberIds.splice(index, 1); // Deselect
+                } else {
+                    if (selectedMemberIds.length >= 2) {
+                        // Keep last selected as 1st, new as 2nd
+                        selectedMemberIds = [selectedMemberIds[1], personId];
+                    } else {
+                        selectedMemberIds.push(personId);
+                    }
+                }
+            } else {
+                // Single select toggle
+                if (selectedMemberIds.length === 1 && selectedMemberIds[0] === personId) {
+                    selectedMemberIds = [];
+                } else {
+                    selectedMemberIds = [personId];
+                }
+            }
+
+            updateSelectionUI();
+            renderTree();
+        }
+
+        function updateSelectionUI() {
+            const banner = document.getElementById('selectionStatusBanner');
+            const statusText = document.getElementById('selectionText');
+
+            if (selectedMemberIds.length === 0) {
+                banner.classList.add('hidden');
+            } else if (selectedMemberIds.length === 1) {
+                banner.classList.remove('hidden');
+                const p1 = appState.members[selectedMemberIds[0]];
+                statusText.textContent = `1 Selected: ${p1 ? p1.name : ''} (Ctrl/Cmd+Click 2nd card to link)`;
+            } else if (selectedMemberIds.length === 2) {
+                banner.classList.remove('hidden');
+                const p1 = appState.members[selectedMemberIds[0]];
+                const p2 = appState.members[selectedMemberIds[1]];
+                statusText.textContent = `Person A: ${p1 ? p1.name : '1'} ↔ Person B: ${p2 ? p2.name : '2'}`;
+            }
+        }
+
+        /**
+         * RENDER TREE & SVG CONNECTOR LINES
          */
         function renderTree() {
             nodesLayer.innerHTML = '';
@@ -570,22 +897,40 @@
             }
             showEmptyState(false);
 
-            // 1. Render Person Cards
+            // Render Nodes
             memberIds.forEach(id => {
                 const person = appState.members[id];
                 const cardEl = createNodeCardElement(person);
                 nodesLayer.appendChild(cardEl);
             });
 
-            // 2. Render Connector Lines
+            // Render SVG Connectors
             renderConnectors();
             updateMemberCountBadge();
+            updateDeviceBadgeUI();
         }
 
         function createNodeCardElement(person) {
             const card = document.createElement('div');
             card.id = `node-${person.id}`;
-            card.className = `node-card absolute bg-slate-900/90 border-2 ${ACCENT_CLASSES[person.color || 'emerald'].border} rounded-2xl p-3 shadow-xl w-56 cursor-pointer flex flex-col justify-between group`;
+
+            const selIndex = selectedMemberIds.indexOf(person.id);
+            let ringClass = '';
+            let numberBadge = '';
+
+            if (selIndex === 0) {
+                ringClass = 'first-selected-ring border-amber-400';
+                numberBadge = `<span class="absolute -top-2.5 -left-2.5 bg-amber-500 text-slate-950 text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-lg">A</span>`;
+            } else if (selIndex === 1) {
+                ringClass = 'second-selected-ring border-emerald-400';
+                numberBadge = `<span class="absolute -top-2.5 -left-2.5 bg-emerald-500 text-slate-950 text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-lg">B</span>`;
+            }
+
+            // Is this card linked to the current device?
+            const isThisDevice = (deviceProfile.linkedPersonId === person.id);
+            const deviceTag = isThisDevice ? `<span class="text-[9px] bg-indigo-950/90 text-indigo-300 border border-indigo-700/80 px-1.5 py-0.5 rounded-md font-bold flex items-center space-x-1 shadow" title="${escapeHtml(deviceProfile.deviceName || 'Device')}"><i class="fa-solid fa-mobile-screen-button"></i> <span>THIS DEVICE</span></span>` : '';
+
+            card.className = `node-card absolute bg-slate-900/90 border-2 ${ringClass || ACCENT_CLASSES[person.color || 'emerald'].border} rounded-2xl p-3 shadow-xl w-56 cursor-pointer flex flex-col justify-between group`;
             card.style.left = `${person.x || 0}px`;
             card.style.top = `${person.y || 0}px`;
 
@@ -594,34 +939,47 @@
                 ? `${person.birthYear || '?'} – ${person.deathYear || 'Present'}`
                 : '';
 
+            // Badge tags for adopted / step child relationships
+            let customTag = '';
+            if (person.isAdopted) {
+                customTag = `<span class="text-[9px] bg-purple-950/80 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded-md font-bold">Adopted</span>`;
+            } else if (person.isStepChild) {
+                customTag = `<span class="text-[9px] bg-amber-950/80 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded-md font-bold">Step</span>`;
+            }
+
             card.innerHTML = `
-                <!-- Top Header / Avatar & Names -->
-                <div class="flex items-start space-x-3">
-                    <div class="w-11 h-11 rounded-xl ${ACCENT_CLASSES[person.color || 'emerald'].bg} border ${ACCENT_CLASSES[person.color || 'emerald'].border} flex items-center justify-center text-xl shrink-0 shadow-inner">
+                ${numberBadge}
+                
+                <!-- Card Header -->
+                <div class="flex items-start space-x-2.5">
+                    <div class="w-10 h-10 rounded-xl ${ACCENT_CLASSES[person.color || 'emerald'].bg} border ${ACCENT_CLASSES[person.color || 'emerald'].border} flex items-center justify-center text-xl shrink-0 shadow-inner">
                         ${avatarEmoji}
                     </div>
                     <div class="flex-1 min-w-0 pr-1">
-                        <h4 class="font-bold text-slate-100 text-sm truncate leading-tight">${escapeHtml(person.name)}</h4>
-                        ${person.title ? `<p class="text-[11px] ${ACCENT_CLASSES[person.color || 'emerald'].text} truncate font-medium">${escapeHtml(person.title)}</p>` : ''}
+                        <div class="flex items-center space-x-1 flex-wrap gap-y-1">
+                            <h4 class="font-bold text-slate-100 text-xs truncate leading-tight">${escapeHtml(person.name)}</h4>
+                            ${deviceTag}
+                            ${customTag}
+                        </div>
+                        ${person.title ? `<p class="text-[10px] ${ACCENT_CLASSES[person.color || 'emerald'].text} truncate font-semibold">${escapeHtml(person.title)}</p>` : ''}
                         ${lifespan ? `<p class="text-[10px] text-slate-400 mt-0.5">${lifespan}</p>` : ''}
                     </div>
                 </div>
 
                 ${person.notes ? `
-                <!-- Notes snippet -->
-                <div class="mt-2 text-[10px] text-slate-400 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800/80 line-clamp-2">
+                <div class="mt-2 text-[10px] text-slate-400 bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/80 line-clamp-2">
                     ${escapeHtml(person.notes)}
                 </div>` : ''}
 
-                <!-- Card Action Bar -->
-                <div class="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                    <button class="add-rel-btn text-slate-300 hover:text-emerald-400 bg-slate-800/80 hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700/60 transition flex items-center space-x-1" title="Add Relative">
+                <!-- Action Toolbar -->
+                <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                    <button class="quick-add-btn text-slate-300 hover:text-emerald-400 bg-slate-800/80 hover:bg-slate-800 px-2 py-1 rounded-lg border border-slate-700/60 transition flex items-center space-x-1" title="Spawn Relative (+)">
                         <i class="fa-solid fa-plus text-emerald-400"></i>
-                        <span class="text-[11px] font-medium">Add</span>
+                        <span class="text-[10px] font-semibold">Add</span>
                     </button>
-                    
+
                     <div class="flex items-center space-x-1">
-                        <button class="edit-btn text-slate-400 hover:text-sky-400 p-1.5 rounded-lg hover:bg-slate-800 transition" title="Edit Details">
+                        <button class="edit-btn text-slate-400 hover:text-sky-400 p-1.5 rounded-lg hover:bg-slate-800 transition" title="Edit Person">
                             <i class="fa-solid fa-pen"></i>
                         </button>
                         <button class="delete-btn text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-800 transition" title="Delete Person">
@@ -631,23 +989,25 @@
                 </div>
             `;
 
-            // CARD DRAGGING LOGIC
+            // CARD MOUSE DOWN & DRAG LOGIC
             let isDraggingCard = false;
-            let cardStartX = 0, cardStartY = 0;
+            let startX = 0, startY = 0;
 
             card.addEventListener('mousedown', (e) => {
-                if (e.target.closest('button')) return; // Ignore dragging if clicking action buttons
-                e.stopPropagation();
-                
+                if (e.target.closest('button')) return;
+
+                // Handle Selection
+                handleNodeClick(person.id, e);
+
                 isDraggingCard = true;
-                cardStartX = e.clientX;
-                cardStartY = e.clientY;
+                startX = e.clientX;
+                startY = e.clientY;
                 card.style.zIndex = '40';
 
                 const onMouseMove = (moveEvent) => {
                     if (!isDraggingCard) return;
-                    const dx = (moveEvent.clientX - cardStartX) / appState.transform.zoom;
-                    const dy = (moveEvent.clientY - cardStartY) / appState.transform.zoom;
+                    const dx = (moveEvent.clientX - startX) / appState.transform.zoom;
+                    const dy = (moveEvent.clientY - startY) / appState.transform.zoom;
 
                     person.x = (person.x || 0) + dx;
                     person.y = (person.y || 0) + dy;
@@ -655,10 +1015,10 @@
                     card.style.left = `${person.x}px`;
                     card.style.top = `${person.y}px`;
 
-                    cardStartX = moveEvent.clientX;
-                    cardStartY = moveEvent.clientY;
+                    startX = moveEvent.clientX;
+                    startY = moveEvent.clientY;
 
-                    renderConnectors(); // Redraw dynamic connector lines smoothly while dragging!
+                    renderConnectors(); // Realtime line updates
                 };
 
                 const onMouseUp = () => {
@@ -675,10 +1035,10 @@
                 window.addEventListener('mouseup', onMouseUp);
             });
 
-            // Button Click Handlers
-            card.querySelector('.add-rel-btn').addEventListener('click', (e) => {
+            // Action Buttons
+            card.querySelector('.quick-add-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
-                openAddRelationModal(person.id);
+                openQuickAddModal(person.id);
             });
 
             card.querySelector('.edit-btn').addEventListener('click', (e) => {
@@ -695,15 +1055,14 @@
         }
 
         /**
-         * SVG CONNECTOR PATH RENDERING
+         * SVG CONNECTING LINES WITH RELATIONSHIP LABELS
          */
         function renderConnectors() {
-            // Keep the gradient defs
             const defs = svgConnectors.querySelector('defs').outerHTML;
             let pathsHtml = defs;
 
-            const CARD_WIDTH = 220; // Approx card width
-            const CARD_HEIGHT = 120; // Approx card height
+            const CARD_WIDTH = 224;
+            const CARD_HEIGHT = 120;
 
             const processedPairs = new Set();
 
@@ -711,81 +1070,254 @@
                 const px = person.x || 0;
                 const py = person.y || 0;
 
-                // 1. Parent -> Child Connectors (Vertical Bezier Curve)
-                if (person.childIds) {
-                    person.childIds.forEach(childId => {
-                        const child = appState.members[childId];
-                        if (child) {
-                            const cx = child.x || 0;
-                            const cy = child.y || 0;
+                // 1. Biological Children Connectors
+                (person.childIds || []).forEach(childId => {
+                    const child = appState.members[childId];
+                    if (child) {
+                        const cx = child.x || 0;
+                        const cy = child.y || 0;
 
-                            const startX = px + CARD_WIDTH / 2;
-                            const startY = py + CARD_HEIGHT;
-                            const endX = cx + CARD_WIDTH / 2;
-                            const endY = cy;
+                        const startX = px + CARD_WIDTH / 2;
+                        const startY = py + CARD_HEIGHT;
+                        const endX = cx + CARD_WIDTH / 2;
+                        const endY = cy;
 
-                            const deltaY = Math.abs(endY - startY) / 2;
-                            const pathData = `M ${startX} ${startY} C ${startX} ${startY + deltaY}, ${endX} ${endY - deltaY}, ${endX} ${endY}`;
+                        const deltaY = Math.abs(endY - startY) / 2;
+                        const pathData = `M ${startX} ${startY} C ${startX} ${startY + deltaY}, ${endX} ${endY - deltaY}, ${endX} ${endY}`;
 
-                            pathsHtml += `<path d="${pathData}" fill="none" stroke="url(#linkGradient)" stroke-width="2.5" stroke-linecap="round" />`;
-                        }
-                    });
-                }
+                        pathsHtml += `<path d="${pathData}" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" marker-end="url(#arrowHead)" opacity="0.85" />`;
+                    }
+                });
 
-                // 2. Spouse Connectors (Horizontal Dashed Line with Heart Accent)
-                if (person.spouseIds) {
-                    person.spouseIds.forEach(spouseId => {
-                        const spouse = appState.members[spouseId];
-                        if (spouse) {
-                            const pairKey = [person.id, spouseId].sort().join('--');
-                            if (!processedPairs.has(pairKey)) {
-                                processedPairs.add(pairKey);
+                // 2. Adopted Children Connectors
+                (person.adoptedChildIds || []).forEach(childId => {
+                    const child = appState.members[childId];
+                    if (child) {
+                        const cx = child.x || 0;
+                        const cy = child.y || 0;
 
-                                const sx = spouse.x || 0;
-                                const sy = spouse.y || 0;
+                        const startX = px + CARD_WIDTH / 2;
+                        const startY = py + CARD_HEIGHT;
+                        const endX = cx + CARD_WIDTH / 2;
+                        const endY = cy;
 
-                                // Connect from center-right to center-left (or whichever is closer)
-                                let startX, startY, endX, endY;
-                                if (px < sx) {
-                                    startX = px + CARD_WIDTH;
-                                    startY = py + CARD_HEIGHT / 2;
-                                    endX = sx;
-                                    endY = sy + CARD_HEIGHT / 2;
-                                } else {
-                                    startX = sx + CARD_WIDTH;
-                                    startY = sy + CARD_HEIGHT / 2;
-                                    endX = px;
-                                    endY = py + CARD_HEIGHT / 2;
-                                }
+                        const deltaY = Math.abs(endY - startY) / 2;
+                        const pathData = `M ${startX} ${startY} C ${startX} ${startY + deltaY}, ${endX} ${endY - deltaY}, ${endX} ${endY}`;
 
-                                const pathData = `M ${startX} ${startY} L ${endX} ${endY}`;
-                                const midX = (startX + endX) / 2;
-                                const midY = (startY + endY) / 2;
+                        pathsHtml += `<path d="${pathData}" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-dasharray="6,4" stroke-linecap="round" marker-end="url(#adoptedArrowHead)" opacity="0.9" />`;
+                        
+                        const midX = (startX + endX) / 2;
+                        const midY = (startY + endY) / 2;
+                        pathsHtml += `<rect x="${midX - 30}" y="${midY - 9}" width="60" height="18" class="svg-label-bg" stroke="#a855f7" stroke-width="1" />`;
+                        pathsHtml += `<text x="${midX}" y="${midY + 3}" text-anchor="middle" fill="#c084fc" font-size="9px" font-weight="bold" font-family="sans-serif">Adopted</text>`;
+                    }
+                });
 
-                                pathsHtml += `<path d="${pathData}" fill="none" stroke="url(#spouseGradient)" stroke-width="2" stroke-dasharray="5,5" />`;
-                                pathsHtml += `<circle cx="${midX}" cy="${midY}" r="7" fill="#0f172a" stroke="#f43f5e" stroke-width="1.5" />`;
-                                pathsHtml += `<text x="${midX}" y="${midY + 3.5}" text-anchor="middle" fill="#f43f5e" font-size="8px" font-family="FontAwesome">💖</text>`;
+                // 3. Step Children Connectors
+                (person.stepChildIds || []).forEach(childId => {
+                    const child = appState.members[childId];
+                    if (child) {
+                        const cx = child.x || 0;
+                        const cy = child.y || 0;
+
+                        const startX = px + CARD_WIDTH / 2;
+                        const startY = py + CARD_HEIGHT;
+                        const endX = cx + CARD_WIDTH / 2;
+                        const endY = cy;
+
+                        const deltaY = Math.abs(endY - startY) / 2;
+                        const pathData = `M ${startX} ${startY} C ${startX} ${startY + deltaY}, ${endX} ${endY - deltaY}, ${endX} ${endY}`;
+
+                        pathsHtml += `<path d="${pathData}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,4" stroke-linecap="round" marker-end="url(#stepArrowHead)" opacity="0.9" />`;
+                        
+                        const midX = (startX + endX) / 2;
+                        const midY = (startY + endY) / 2;
+                        pathsHtml += `<rect x="${midX - 25}" y="${midY - 9}" width="50" height="18" class="svg-label-bg" stroke="#f59e0b" stroke-width="1" />`;
+                        pathsHtml += `<text x="${midX}" y="${midY + 3}" text-anchor="middle" fill="#fbbf24" font-size="9px" font-weight="bold" font-family="sans-serif">Step</text>`;
+                    }
+                });
+
+                // 4. Spouse / Partner Connectors
+                (person.spouseIds || []).forEach(spouseId => {
+                    const spouse = appState.members[spouseId];
+                    if (spouse) {
+                        const pairKey = [person.id, spouseId].sort().join('--');
+                        if (!processedPairs.has(pairKey)) {
+                            processedPairs.add(pairKey);
+
+                            const sx = spouse.x || 0;
+                            const sy = spouse.y || 0;
+
+                            let startX, startY, endX, endY;
+                            if (px < sx) {
+                                startX = px + CARD_WIDTH;
+                                startY = py + CARD_HEIGHT / 2;
+                                endX = sx;
+                                endY = sy + CARD_HEIGHT / 2;
+                            } else {
+                                startX = sx + CARD_WIDTH;
+                                startY = sy + CARD_HEIGHT / 2;
+                                endX = px;
+                                endY = py + CARD_HEIGHT / 2;
                             }
+
+                            const pathData = `M ${startX} ${startY} L ${endX} ${endY}`;
+                            const midX = (startX + endX) / 2;
+                            const midY = (startY + endY) / 2;
+
+                            pathsHtml += `<path d="${pathData}" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.9" />`;
+                            pathsHtml += `<circle cx="${midX}" cy="${midY}" r="9" fill="#0f172a" stroke="#f43f5e" stroke-width="1.5" />`;
+                            pathsHtml += `<text x="${midX}" y="${midY + 3.5}" text-anchor="middle" fill="#f43f5e" font-size="9px">💍</text>`;
                         }
-                    });
-                }
+                    }
+                });
             });
 
             svgConnectors.innerHTML = pathsHtml;
         }
 
         /**
-         * AUTO LAYOUT ALGORITHM (Tidy Multi-Generational Hierarchy)
+         * LINKING MODAL ("What do you want to do?")
+         */
+        function triggerLinkModal() {
+            if (selectedMemberIds.length < 2) {
+                alert("Please select 2 cards first! Hold Ctrl/Cmd and click Person A, then Person B.");
+                return;
+            }
+
+            const p1 = appState.members[selectedMemberIds[0]];
+            const p2 = appState.members[selectedMemberIds[1]];
+
+            if (!p1 || !p2) return;
+
+            document.getElementById('linkPerson1Name').textContent = p1.name;
+            document.getElementById('linkPerson2Name').textContent = p2.name;
+
+            document.getElementById('p1BioName').textContent = p1.name;
+            document.getElementById('p2BioName').textContent = p2.name;
+
+            document.getElementById('p1AdoptName').textContent = p1.name;
+            document.getElementById('p2AdoptName').textContent = p2.name;
+
+            document.getElementById('p1StepName').textContent = p1.name;
+            document.getElementById('p2StepName').textContent = p2.name;
+
+            document.getElementById('linkModal').classList.remove('hidden');
+        }
+
+        function swapLinkOrder() {
+            selectedMemberIds = [selectedMemberIds[1], selectedMemberIds[0]];
+            updateSelectionUI();
+            triggerLinkModal();
+            renderTree();
+        }
+
+        function executeRelationshipLink(relType) {
+            const p1Id = selectedMemberIds[0];
+            const p2Id = selectedMemberIds[1];
+
+            const p1 = appState.members[p1Id];
+            const p2 = appState.members[p2Id];
+
+            if (!p1 || !p2) return;
+
+            // Clean existing direct connections between these two first
+            unlinkTwoMembers(p1Id, p2Id);
+
+            if (relType === 'parent-child') {
+                if (!p1.childIds) p1.childIds = [];
+                p1.childIds.push(p2Id);
+
+                if (!p2.parentIds) p2.parentIds = [];
+                p2.parentIds.push(p1Id);
+                p2.isAdopted = false;
+                p2.isStepChild = false;
+
+            } else if (relType === 'adopted-child') {
+                if (!p1.adoptedChildIds) p1.adoptedChildIds = [];
+                p1.adoptedChildIds.push(p2Id);
+
+                if (!p2.parentIds) p2.parentIds = [];
+                p2.parentIds.push(p1Id);
+                p2.isAdopted = true;
+
+            } else if (relType === 'step-child') {
+                if (!p1.stepChildIds) p1.stepChildIds = [];
+                p1.stepChildIds.push(p2Id);
+
+                if (!p2.parentIds) p2.parentIds = [];
+                p2.parentIds.push(p1Id);
+                p2.isStepChild = true;
+
+            } else if (relType === 'spouse') {
+                if (!p1.spouseIds) p1.spouseIds = [];
+                p1.spouseIds.push(p2Id);
+
+                if (!p2.spouseIds) p2.spouseIds = [];
+                p2.spouseIds.push(p1Id);
+
+            } else if (relType === 'sibling') {
+                if (p1.parentIds && p1.parentIds.length > 0) {
+                    p2.parentIds = [...new Set([...(p2.parentIds || []), ...p1.parentIds])];
+                    p1.parentIds.forEach(parentId => {
+                        const parent = appState.members[parentId];
+                        if (parent) {
+                            if (!parent.childIds) parent.childIds = [];
+                            if (!parent.childIds.includes(p2Id)) parent.childIds.push(p2Id);
+                        }
+                    });
+                } else {
+                    const newParent = createNewMember({
+                        name: "Shared Parent",
+                        childIds: [p1Id, p2Id],
+                        x: (p1.x + p2.x) / 2,
+                        y: Math.min(p1.y, p2.y) - 200
+                    });
+                    p1.parentIds = [newParent.id];
+                    p2.parentIds = [newParent.id];
+                }
+
+            } else if (relType === 'unlink') {
+                // Handled above
+            }
+
+            document.getElementById('linkModal').classList.add('hidden');
+            selectedMemberIds = [];
+            updateSelectionUI();
+            renderTree();
+            saveStateToStorage();
+        }
+
+        function unlinkTwoMembers(id1, id2) {
+            const p1 = appState.members[id1];
+            const p2 = appState.members[id2];
+
+            if (p1) {
+                p1.childIds = (p1.childIds || []).filter(i => i !== id2);
+                p1.adoptedChildIds = (p1.adoptedChildIds || []).filter(i => i !== id2);
+                p1.stepChildIds = (p1.stepChildIds || []).filter(i => i !== id2);
+                p1.spouseIds = (p1.spouseIds || []).filter(i => i !== id2);
+                p1.parentIds = (p1.parentIds || []).filter(i => i !== id2);
+            }
+            if (p2) {
+                p2.childIds = (p2.childIds || []).filter(i => i !== id1);
+                p2.adoptedChildIds = (p2.adoptedChildIds || []).filter(i => i !== id1);
+                p2.stepChildIds = (p2.stepChildIds || []).filter(i => i !== id1);
+                p2.spouseIds = (p2.spouseIds || []).filter(i => i !== id1);
+                p2.parentIds = (p2.parentIds || []).filter(i => i !== id1);
+            }
+        }
+
+        /**
+         * AUTO LAYOUT ALGORITHM
          */
         function autoLayoutTree() {
             const members = Object.values(appState.members);
             if (members.length === 0) return;
 
-            // Find root ancestors (members with no registered parents)
             let roots = members.filter(m => !m.parentIds || m.parentIds.length === 0);
-            if (roots.length === 0) roots = [members[0]]; // Fallback if cycle exists
+            if (roots.length === 0) roots = [members[0]];
 
-            // Assign generation levels (Y-axis)
             const levels = {};
             
             function assignLevel(memberId, currentLevel) {
@@ -795,24 +1327,18 @@
                 const member = appState.members[memberId];
                 if (!member) return;
 
-                // Spouses share the same level
-                if (member.spouseIds) {
-                    member.spouseIds.forEach(spId => {
-                        if (levels[spId] === undefined) levels[spId] = currentLevel;
-                    });
-                }
+                (member.spouseIds || []).forEach(spId => {
+                    if (levels[spId] === undefined) levels[spId] = currentLevel;
+                });
 
-                // Children go to level + 1
-                if (member.childIds) {
-                    member.childIds.forEach(chId => {
-                        assignLevel(chId, currentLevel + 1);
-                    });
-                }
+                const allChildren = [...(member.childIds || []), ...(member.adoptedChildIds || []), ...(member.stepChildIds || [])];
+                allChildren.forEach(chId => {
+                    assignLevel(chId, currentLevel + 1);
+                });
             }
 
             roots.forEach(r => assignLevel(r.id, 0));
 
-            // Group members by level
             const levelGroups = {};
             Object.keys(appState.members).forEach(id => {
                 const lvl = levels[id] || 0;
@@ -820,9 +1346,8 @@
                 levelGroups[lvl].push(appState.members[id]);
             });
 
-            // Assign coordinates
-            const X_SPACING = 260; // Horizontal distance between cards
-            const Y_SPACING = 200; // Vertical distance between generations
+            const X_SPACING = 270;
+            const Y_SPACING = 220;
 
             Object.keys(levelGroups).forEach(lvl => {
                 const group = levelGroups[lvl];
@@ -841,13 +1366,13 @@
         }
 
         /**
-         * MEMBER CREATION & RELATIONSHIP HELPERS
+         * MEMBER CREATION & QUICK ADD
          */
         function createNewMember(data = {}) {
             const id = 'person_' + Math.random().toString(36).substring(2, 9);
             const newMember = {
                 id,
-                name: data.name || "New Relative",
+                name: data.name || "New Person",
                 gender: data.gender || "female",
                 birthYear: data.birthYear || "",
                 deathYear: data.deathYear || "",
@@ -857,6 +1382,8 @@
                 color: data.color || "emerald",
                 parentIds: data.parentIds || [],
                 childIds: data.childIds || [],
+                adoptedChildIds: data.adoptedChildIds || [],
+                stepChildIds: data.stepChildIds || [],
                 spouseIds: data.spouseIds || [],
                 x: data.x || 0,
                 y: data.y || 0
@@ -866,21 +1393,21 @@
             return newMember;
         }
 
-        function openAddRelationModal(targetId) {
-            currentAddRelTargetId = targetId;
-            const targetPerson = appState.members[targetId];
-            document.getElementById('addRelationTargetName').textContent = targetPerson ? targetPerson.name : '';
-            document.getElementById('addRelationModal').classList.remove('hidden');
+        function openQuickAddModal(targetId) {
+            currentQuickAddTargetId = targetId;
+            const target = appState.members[targetId];
+            document.getElementById('quickAddTargetName').textContent = target ? target.name : '';
+            document.getElementById('quickAddModal').classList.remove('hidden');
         }
 
-        function handleAddRelationChoice(relType) {
-            document.getElementById('addRelationModal').classList.add('hidden');
-            const target = appState.members[currentAddRelTargetId];
+        function handleQuickAddChoice(relType) {
+            document.getElementById('quickAddModal').classList.add('hidden');
+            const target = appState.members[currentQuickAddTargetId];
             if (!target) return;
 
             let newMember;
-            const OFFSET_X = 260;
-            const OFFSET_Y = 200;
+            const OFFSET_X = 270;
+            const OFFSET_Y = 220;
 
             if (relType === 'child') {
                 newMember = createNewMember({
@@ -892,16 +1419,17 @@
                 if (!target.childIds) target.childIds = [];
                 target.childIds.push(newMember.id);
 
-                // If target has spouse, auto-add as parent as well
-                if (target.spouseIds && target.spouseIds.length > 0) {
-                    const spouseId = target.spouseIds[0];
-                    newMember.parentIds.push(spouseId);
-                    const spouse = appState.members[spouseId];
-                    if (spouse) {
-                        if (!spouse.childIds) spouse.childIds = [];
-                        spouse.childIds.push(newMember.id);
-                    }
-                }
+            } else if (relType === 'adopted-child') {
+                newMember = createNewMember({
+                    name: `Adopted Child of ${target.name}`,
+                    parentIds: [target.id],
+                    color: 'purple',
+                    x: target.x,
+                    y: target.y + OFFSET_Y
+                });
+                newMember.isAdopted = true;
+                if (!target.adoptedChildIds) target.adoptedChildIds = [];
+                target.adoptedChildIds.push(newMember.id);
 
             } else if (relType === 'spouse') {
                 newMember = createNewMember({
@@ -928,11 +1456,41 @@
 
             renderTree();
             saveStateToStorage();
-            openEditModal(newMember.id); // Open edit modal for immediate customization
+            openEditModal(newMember.id);
         }
 
         /**
-         * EDIT MODAL HANDLERS
+         * DEVICE / LOCAL PERSONA MODAL
+         */
+        function openDeviceModal() {
+            const nameInput = document.getElementById('deviceNameInput');
+            const personSelect = document.getElementById('devicePersonSelect');
+
+            nameInput.value = deviceProfile.deviceName || 'My Device';
+            
+            personSelect.innerHTML = `<option value="">-- Unlinked / No Person --</option>`;
+            Object.values(appState.members).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.name} ${p.birthYear ? '(' + p.birthYear + ')' : ''}`;
+                if (p.id === deviceProfile.linkedPersonId) opt.selected = true;
+                personSelect.appendChild(opt);
+            });
+
+            document.getElementById('deviceModal').classList.remove('hidden');
+        }
+
+        function saveDeviceModal() {
+            deviceProfile.deviceName = document.getElementById('deviceNameInput').value.trim() || 'My Device';
+            deviceProfile.linkedPersonId = document.getElementById('devicePersonSelect').value || null;
+            
+            saveDeviceProfile();
+            renderTree();
+            document.getElementById('deviceModal').classList.add('hidden');
+        }
+
+        /**
+         * EDIT PERSON DETAILS MODAL
          */
         function openEditModal(personId) {
             currentEditingId = personId;
@@ -948,12 +1506,11 @@
             document.getElementById('editAvatar').value = person.avatar || '';
             document.getElementById('editNotes').value = person.notes || '';
 
-            renderModalRelationshipsList(person);
-
+            renderRelationshipsListInModal(person);
             document.getElementById('personModal').classList.remove('hidden');
         }
 
-        function renderModalRelationshipsList(person) {
+        function renderRelationshipsListInModal(person) {
             const listEl = document.getElementById('relationshipsList');
             listEl.innerHTML = '';
 
@@ -962,27 +1519,33 @@
             (person.parentIds || []).forEach(id => {
                 if (appState.members[id]) relations.push({ id, role: 'Parent', name: appState.members[id].name });
             });
-            (person.spouseIds || []).forEach(id => {
-                if (appState.members[id]) relations.push({ id, role: 'Spouse', name: appState.members[id].name });
-            });
             (person.childIds || []).forEach(id => {
                 if (appState.members[id]) relations.push({ id, role: 'Child', name: appState.members[id].name });
             });
+            (person.adoptedChildIds || []).forEach(id => {
+                if (appState.members[id]) relations.push({ id, role: 'Adopted Child', name: appState.members[id].name });
+            });
+            (person.stepChildIds || []).forEach(id => {
+                if (appState.members[id]) relations.push({ id, role: 'Step Child', name: appState.members[id].name });
+            });
+            (person.spouseIds || []).forEach(id => {
+                if (appState.members[id]) relations.push({ id, role: 'Spouse', name: appState.members[id].name });
+            });
 
             if (relations.length === 0) {
-                listEl.innerHTML = `<p class="text-slate-500 text-[11px] italic">No connected relationships yet.</p>`;
+                listEl.innerHTML = `<p class="text-slate-500 text-[11px] italic">No active links.</p>`;
                 return;
             }
 
             relations.forEach(rel => {
                 const item = document.createElement('div');
-                item.className = 'flex items-center justify-between bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-700/50 text-[11px]';
+                item.className = 'flex items-center justify-between bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 text-[11px]';
                 item.innerHTML = `
                     <div class="flex items-center space-x-2">
-                        <span class="text-slate-400 font-medium">${rel.role}:</span>
-                        <span class="text-slate-200 font-semibold">${escapeHtml(rel.name)}</span>
+                        <span class="text-slate-400 font-semibold">${rel.role}:</span>
+                        <span class="text-slate-200 font-bold">${escapeHtml(rel.name)}</span>
                     </div>
-                    <button type="button" onclick="unlinkRelationship('${person.id}', '${rel.id}')" class="text-rose-400 hover:text-rose-300 hover:bg-slate-700 p-1 rounded transition" title="Unlink relationship">
+                    <button type="button" onclick="unlinkTwoMembers('${person.id}', '${rel.id}'); renderRelationshipsListInModal(appState.members['${person.id}']); renderTree(); saveStateToStorage();" class="text-rose-400 hover:text-rose-300 p-1 hover:bg-slate-700 rounded transition" title="Unlink">
                         <i class="fa-solid fa-link-slash"></i>
                     </button>
                 `;
@@ -990,33 +1553,12 @@
             });
         }
 
-        function unlinkRelationship(personId, targetId) {
-            const p1 = appState.members[personId];
-            const p2 = appState.members[targetId];
-
-            if (p1) {
-                p1.parentIds = (p1.parentIds || []).filter(id => id !== targetId);
-                p1.spouseIds = (p1.spouseIds || []).filter(id => id !== targetId);
-                p1.childIds = (p1.childIds || []).filter(id => id !== targetId);
-            }
-            if (p2) {
-                p2.parentIds = (p2.parentIds || []).filter(id => id !== personId);
-                p2.spouseIds = (p2.spouseIds || []).filter(id => id !== personId);
-                p2.childIds = (p2.childIds || []).filter(id => id !== personId);
-            }
-
-            renderModalRelationshipsList(p1);
-            renderTree();
-            saveStateToStorage();
-        }
-
-        function savePersonModal() {
+        function savePersonDetails() {
             if (!currentEditingId) return;
             const person = appState.members[currentEditingId];
             if (!person) return;
 
-            const nameInput = document.getElementById('editName').value.trim();
-            person.name = nameInput || 'Unnamed Relative';
+            person.name = document.getElementById('editName').value.trim() || 'Unnamed Relative';
             person.gender = document.getElementById('editGender').value;
             person.color = document.getElementById('editColor').value;
             person.birthYear = document.getElementById('editBirthYear').value.trim();
@@ -1036,17 +1578,26 @@
 
             openConfirmModal(
                 `Delete ${person.name}?`,
-                `This will remove them from the family tree and unlink connected relationships.`,
+                `This will remove them permanently and unlink all connections.`,
                 () => {
-                    // Remove links from all connected members
                     Object.values(appState.members).forEach(m => {
                         m.parentIds = (m.parentIds || []).filter(id => id !== personId);
-                        m.spouseIds = (m.spouseIds || []).filter(id => id !== personId);
                         m.childIds = (m.childIds || []).filter(id => id !== personId);
+                        m.adoptedChildIds = (m.adoptedChildIds || []).filter(id => id !== personId);
+                        m.stepChildIds = (m.stepChildIds || []).filter(id => id !== personId);
+                        m.spouseIds = (m.spouseIds || []).filter(id => id !== personId);
                     });
 
+                    if (deviceProfile.linkedPersonId === personId) {
+                        deviceProfile.linkedPersonId = null;
+                        saveDeviceProfile();
+                    }
+
                     delete appState.members[personId];
+                    selectedMemberIds = selectedMemberIds.filter(id => id !== personId);
+                    
                     document.getElementById('personModal').classList.add('hidden');
+                    updateSelectionUI();
                     renderTree();
                     saveStateToStorage();
                 }
@@ -1054,31 +1605,87 @@
         }
 
         /**
-         * EVENT LISTENERS SETUP
+         * SETUP EVENT LISTENERS
          */
         function setupEventListeners() {
-            // Tree Title rename
-            const treeTitleInput = document.getElementById('treeTitleInput');
-            treeTitleInput.addEventListener('change', () => {
-                appState.title = treeTitleInput.value || "My Family Tree";
+            // Tree Title
+            document.getElementById('treeTitleInput').addEventListener('change', (e) => {
+                appState.title = e.target.value || "My Family Tree";
                 saveStateToStorage();
             });
 
-            // Add First / Root Ancestor Button
-            const addRootHandler = () => {
-                const newRoot = createNewMember({ name: "Founder / Ancestor", x: 0, y: 0 });
+            // Device Modal
+            document.getElementById('openDeviceModalBtn').addEventListener('click', openDeviceModal);
+            document.getElementById('closeDeviceModalBtn').addEventListener('click', () => {
+                document.getElementById('deviceModal').classList.add('hidden');
+            });
+            document.getElementById('saveDeviceLinkBtn').addEventListener('click', saveDeviceModal);
+            document.getElementById('clearDeviceLinkBtn').addEventListener('click', () => {
+                deviceProfile.linkedPersonId = null;
+                saveDeviceProfile();
+                renderTree();
+                document.getElementById('deviceModal').classList.add('hidden');
+            });
+
+            // Add Person Button
+            const addPersonHandler = () => {
+                const newPerson = createNewMember({ name: "Founder / Ancestor", x: 0, y: 0 });
                 renderTree();
                 centerView();
                 saveStateToStorage();
-                openEditModal(newRoot.id);
+                openEditModal(newPerson.id);
             };
-            document.getElementById('addRootBtn').addEventListener('click', addRootHandler);
-            document.getElementById('emptyAddBtn').addEventListener('click', addRootHandler);
+            document.getElementById('addMemberBtn').addEventListener('click', addPersonHandler);
+            document.getElementById('emptyAddBtn').addEventListener('click', addPersonHandler);
 
-            // Auto Layout Button
+            // Auto Layout
             document.getElementById('autoLayoutBtn').addEventListener('click', autoLayoutTree);
 
-            // Zoom Controls
+            // Link Shortcut Trigger
+            document.getElementById('triggerLinkShortcutBtn').addEventListener('click', triggerLinkModal);
+            document.getElementById('clearSelectionBtn').addEventListener('click', () => {
+                selectedMemberIds = [];
+                updateSelectionUI();
+                renderTree();
+            });
+
+            // Link Modal Options
+            document.querySelectorAll('.link-option-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const relType = btn.getAttribute('data-rel');
+                    executeRelationshipLink(relType);
+                });
+            });
+
+            document.getElementById('swapLinkOrderBtn').addEventListener('click', swapLinkOrder);
+            document.getElementById('closeLinkModalBtn').addEventListener('click', () => {
+                document.getElementById('linkModal').classList.add('hidden');
+            });
+
+            // Person Modal Buttons
+            document.getElementById('closePersonModalBtn').addEventListener('click', () => {
+                document.getElementById('personModal').classList.add('hidden');
+            });
+            document.getElementById('cancelPersonModalBtn').addEventListener('click', () => {
+                document.getElementById('personModal').classList.add('hidden');
+            });
+            document.getElementById('savePersonBtn').addEventListener('click', savePersonDetails);
+            document.getElementById('deletePersonBtn').addEventListener('click', () => {
+                if (currentEditingId) confirmDeletePerson(currentEditingId);
+            });
+
+            // Quick Add Choice Buttons
+            document.querySelectorAll('.quick-add-opt').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const relType = btn.getAttribute('data-quick-rel');
+                    handleQuickAddChoice(relType);
+                });
+            });
+            document.getElementById('cancelQuickAddBtn').addEventListener('click', () => {
+                document.getElementById('quickAddModal').classList.add('hidden');
+            });
+
+            // Zoom Buttons
             document.getElementById('zoomInBtn').addEventListener('click', () => {
                 appState.transform.zoom = Math.min(appState.transform.zoom + 0.15, 2.5);
                 applyTransform();
@@ -1093,47 +1700,28 @@
             });
             document.getElementById('fitViewBtn').addEventListener('click', centerView);
 
-            // Modal Action Listeners
-            document.getElementById('closeModalBtn').addEventListener('click', () => {
-                document.getElementById('personModal').classList.add('hidden');
-            });
-            document.getElementById('cancelModalBtn').addEventListener('click', () => {
-                document.getElementById('personModal').classList.add('hidden');
-            });
-            document.getElementById('savePersonBtn').addEventListener('click', savePersonModal);
-            document.getElementById('deletePersonBtn').addEventListener('click', () => {
-                if (currentEditingId) confirmDeletePerson(currentEditingId);
-            });
-
-            // Add Relation Options
-            document.querySelectorAll('.add-rel-option').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const relType = btn.getAttribute('data-rel-type');
-                    handleAddRelationChoice(relType);
-                });
-            });
-            document.getElementById('cancelAddRelBtn').addEventListener('click', () => {
-                document.getElementById('addRelationModal').classList.add('hidden');
-            });
-
-            // Export / Import JSON
+            // Export / Import
             document.getElementById('exportJsonBtn').addEventListener('click', exportTreeJson);
             document.getElementById('importJsonInput').addEventListener('change', importTreeJson);
 
-            // Clear & Preset
+            // Reset & Demo
             document.getElementById('clearTreeBtn').addEventListener('click', () => {
                 openConfirmModal("Clear Entire Family Tree?", "This will delete all members permanently.", () => {
                     appState.members = {};
+                    selectedMemberIds = [];
+                    deviceProfile.linkedPersonId = null;
+                    saveDeviceProfile();
+                    updateSelectionUI();
                     renderTree();
                     saveStateToStorage();
                 });
             });
 
-            const demoHandler = () => loadSamplePresetTree();
-            document.getElementById('presetDemoBtn').addEventListener('click', demoHandler);
+            const demoHandler = () => loadSampleDemoTree();
+            document.getElementById('loadDemoBtn').addEventListener('click', demoHandler);
             document.getElementById('emptyDemoBtn').addEventListener('click', demoHandler);
 
-            // Search Filter Listener
+            // Search Filter
             const searchInput = document.getElementById('searchInput');
             const searchResults = document.getElementById('searchResults');
 
@@ -1146,11 +1734,11 @@
 
                 const matches = Object.values(appState.members).filter(p => p.name.toLowerCase().includes(query));
                 if (matches.length === 0) {
-                    searchResults.innerHTML = `<div class="p-3 text-xs text-slate-400">No relatives found.</div>`;
+                    searchResults.innerHTML = `<div class="p-3 text-xs text-slate-400">No matching relative found.</div>`;
                 } else {
                     searchResults.innerHTML = matches.map(m => `
                         <div class="p-2.5 hover:bg-slate-700/80 cursor-pointer text-xs border-b border-slate-700/40 last:border-none flex items-center justify-between" onclick="focusOnPerson('${m.id}')">
-                            <span class="font-semibold text-slate-200">${escapeHtml(m.name)}</span>
+                            <span class="font-bold text-slate-200">${escapeHtml(m.name)}</span>
                             <span class="text-[10px] text-slate-400">${m.birthYear || ''}</span>
                         </div>
                     `).join('');
@@ -1166,14 +1754,12 @@
             const person = appState.members[personId];
             if (!person) return;
 
-            // Smooth pan to focus person in viewport center
             appState.transform.zoom = 1;
             appState.transform.x = (viewport.clientWidth / 2) - (person.x + 110);
             appState.transform.y = (viewport.clientHeight / 2) - (person.y + 60);
 
             applyTransform();
 
-            // Highlight card briefly
             const cardEl = document.getElementById(`node-${personId}`);
             if (cardEl) {
                 cardEl.classList.add('ring-4', 'ring-emerald-400');
@@ -1185,7 +1771,11 @@
          * EXPORT / IMPORT JSON
          */
         function exportTreeJson() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const exportPayload = {
+                appState,
+                deviceProfile
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
             downloadAnchor.setAttribute("download", `${(appState.title || "family-tree").toLowerCase().replace(/\s+/g, '-')}.json`);
@@ -1201,49 +1791,62 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (importedData && importedData.members) {
-                        appState = importedData;
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && (imported.appState || imported.members)) {
+                        appState = imported.appState || imported;
+                        if (imported.deviceProfile) {
+                            deviceProfile = imported.deviceProfile;
+                            saveDeviceProfile();
+                        }
                         document.getElementById('treeTitleInput').value = appState.title || "My Family Tree";
+                        selectedMemberIds = [];
+                        updateSelectionUI();
                         renderTree();
                         centerView();
                         saveStateToStorage();
                     } else {
-                        alert("Invalid family tree JSON file format.");
+                        alert("Invalid family tree JSON file structure.");
                     }
                 } catch (err) {
-                    console.error("Error importing JSON file:", err);
+                    console.error("Error loading JSON:", err);
                 }
             };
             reader.readAsText(file);
         }
 
         /**
-         * DEMO SAMPLE FAMILY TREE PRESET
+         * SAMPLE DEMO DATA
          */
-        function loadSamplePresetTree() {
+        function loadSampleDemoTree() {
             appState = {
-                title: "Royal Oak Family Legacy",
+                title: "Imperial Family Legacy",
                 transform: { x: 0, y: 0, zoom: 1 },
                 members: {
-                    "p1": { id: "p1", name: "Arthur Pendelton", gender: "male", birthYear: "1940", deathYear: "2018", title: "Patriarch", notes: "Founder of the family estate.", color: "sky", avatar: "👴", childIds: ["p3", "p4"], spouseIds: ["p2"], x: -150, y: 0 },
-                    "p2": { id: "p2", name: "Martha Stewart", gender: "female", birthYear: "1943", deathYear: "", title: "Matriarch", notes: "Loves gardening & oil painting.", color: "rose", avatar: "👵", childIds: ["p3", "p4"], spouseIds: ["p1"], x: 130, y: 0 },
-                    "p3": { id: "p3", name: "Robert Pendelton", gender: "male", birthYear: "1970", deathYear: "", title: "Civil Engineer", notes: "Builds bridges & loves hiking.", color: "emerald", avatar: "👨", parentIds: ["p1", "p2"], childIds: ["p6", "p7"], spouseIds: ["p5"], x: -200, y: 220 },
-                    "p4": { id: "p4", name: "Evelyn Pendelton", gender: "female", birthYear: "1975", deathYear: "", title: "Botanist", notes: "Researches rare plant species.", color: "purple", avatar: "👩", parentIds: ["p1", "p2"], childIds: [], spouseIds: [], x: 150, y: 220 },
-                    "p5": { id: "p5", name: "Sarah Jenkins", gender: "female", birthYear: "1972", deathYear: "", title: "Architect", color: "rose", avatar: "👩", childIds: ["p6", "p7"], spouseIds: ["p3"], x: 80, y: 220 },
-                    "p6": { id: "p6", name: "Alex Pendelton", gender: "male", birthYear: "2002", deathYear: "", title: "Software Developer", notes: "Built this interactive tree app!", color: "amber", avatar: "🧑‍💻", parentIds: ["p3", "p5"], childIds: [], spouseIds: [], x: -220, y: 440 },
-                    "p7": { id: "p7", name: "Clara Pendelton", gender: "female", birthYear: "2006", deathYear: "", title: "Music Student", notes: "Plays classical violin.", color: "emerald", avatar: "🎻", parentIds: ["p3", "p5"], childIds: [], spouseIds: [], x: 60, y: 440 }
+                    "p1": { id: "p1", name: "Arthur Pendelton", gender: "male", birthYear: "1938", deathYear: "2015", title: "Patriarch", notes: "Founded the ancestral house.", color: "sky", avatar: "👴", childIds: ["p3"], spouseIds: ["p2"], x: -160, y: 0 },
+                    "p2": { id: "p2", name: "Eleanor Pendelton", gender: "female", birthYear: "1942", deathYear: "", title: "Matriarch", color: "rose", avatar: "👵", childIds: ["p3"], spouseIds: ["p1"], x: 130, y: 0 },
+                    "p3": { id: "p3", name: "Robert Pendelton", gender: "male", birthYear: "1968", deathYear: "", title: "Civil Engineer", color: "emerald", avatar: "👨", parentIds: ["p1", "p2"], childIds: ["p5"], adoptedChildIds: ["p6"], spouseIds: ["p4"], x: -160, y: 220 },
+                    "p4": { id: "p4", name: "Sarah Jenkins", gender: "female", birthYear: "1971", deathYear: "", title: "Architect", color: "rose", avatar: "👩", childIds: ["p5"], spouseIds: ["p3"], x: 130, y: 220 },
+                    "p5": { id: "p5", name: "Alex Pendelton", gender: "male", birthYear: "1998", deathYear: "", title: "Software Engineer", notes: "Created this tree app!", color: "amber", avatar: "🧑‍💻", parentIds: ["p3", "p4"], x: -220, y: 440 },
+                    "p6": { id: "p6", name: "Maya Pendelton", gender: "female", birthYear: "2004", deathYear: "", title: "Artist & Musician", color: "purple", avatar: "🎨", parentIds: ["p3"], isAdopted: true, x: 80, y: 440 }
                 }
             };
 
+            deviceProfile = {
+                deviceName: "My Computer",
+                linkedPersonId: "p5"
+            };
+
             document.getElementById('treeTitleInput').value = appState.title;
+            selectedMemberIds = [];
+            saveDeviceProfile();
+            updateSelectionUI();
             renderTree();
             centerView();
             saveStateToStorage();
         }
 
         /**
-         * CUSTOM CONFIRM MODAL
+         * CONFIRMATION DIALOG
          */
         function openConfirmModal(title, message, onConfirm) {
             document.getElementById('confirmTitle').textContent = title;
