@@ -3,59 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Family Tree</title>
-    <!-- Load Mermaid.js for easy diagram rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'default' });
-    </script>
+    <title>Dynamic Family Tree</title>
+    <!-- Load D3.js library for drawing graph diagrams -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            text-align: center;
+            background-color: #f8f9fa;
             margin: 0;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         h1 {
-            color: #2c3e50;
+            color: #333;
         }
-        .tree-container {
-            background: white;
-            padding: 20px;
+        #tree-container {
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            background: #ffffff;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            display: inline-block;
-            margin-top: 20px;
-            max-width: 100%;
-            overflow-x: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .node circle {
+            fill: #4CAF50;
+            stroke: #2E7D32;
+            stroke-width: 2px;
+        }
+        .node text {
+            font: 12px sans-serif;
+        }
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 2px;
         }
     </style>
 </head>
 <body>
 
-    <h1>The Family Tree</h1>
-    <p>Hosted for free on GitHub Pages</p>
+    <h1>Interactive Family Tree</h1>
+    <div id="tree-container"></div>
 
-    <div class="tree-container">
-        <!-- Family Tree Diagram Code -->
-        <div class="mermaid">
-            graph TD
-                %% Define family members and relationships
-                GreatGrandpa["Grandpa John<br>(1930 - 2015)"] --> Grandpa["Dad's Dad<br>(1955 - )"]
-                GreatGrandma["Grandma Mary<br>(1933 - 2020)"] --> Grandpa
-                
-                Grandpa --> Dad["Father<br>(1980 - )"]
-                Mom["Mother<br>(1982 - )"] --> Dad
-                
-                Dad --> Me["Me<br>(2008 - )"]
-                Dad --> Sibling["Brother / Sister"]
-
-                %% Styling nodes for visual appeal
-                style Me fill:#ffcc00,stroke:#333,stroke-width:2px;
-        </div>
-    </div>
-
+    <script src="app.js"></script>
 </body>
 </html>
