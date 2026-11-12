@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Family Tree</title>
+    <!-- Load Mermaid.js for easy diagram rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .tree-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: inline-block;
+            margin-top: 20px;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>The Family Tree</h1>
+    <p>Hosted for free on GitHub Pages</p>
+
+    <div class="tree-container">
+        <!-- Family Tree Diagram Code -->
+        <div class="mermaid">
+            graph TD
+                %% Define family members and relationships
+                GreatGrandpa["Grandpa John<br>(1930 - 2015)"] --> Grandpa["Dad's Dad<br>(1955 - )"]
+                GreatGrandma["Grandma Mary<br>(1933 - 2020)"] --> Grandpa
+                
+                Grandpa --> Dad["Father<br>(1980 - )"]
+                Mom["Mother<br>(1982 - )"] --> Dad
+                
+                Dad --> Me["Me<br>(2008 - )"]
+                Dad --> Sibling["Brother / Sister"]
+
+                %% Styling nodes for visual appeal
+                style Me fill:#ffcc00,stroke:#333,stroke-width:2px;
+        </div>
+    </div>
+
+</body>
+</html>
