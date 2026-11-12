@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Family Tree Maker</title>
+    <title>Interactive Family Tree Application</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- D3.js v7 -->
@@ -59,11 +59,13 @@
         }
 
         .first-selected-ring {
-            box-shadow: 0 0 0 3px #f59e0b, 0 10px 25px -5px rgba(245, 158, 11, 0.5);
+            box-shadow: 0 0 0 3px #f59e0b, 0 10px 25px -5px rgba(245, 158, 11, 0.5) !important;
+            border-color: #f59e0b !important;
         }
 
         .second-selected-ring {
-            box-shadow: 0 0 0 3px #10b981, 0 10px 25px -5px rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 0 3px #10b981, 0 10px 25px -5px rgba(16, 185, 129, 0.5) !important;
+            border-color: #10b981 !important;
         }
 
         .no-select {
@@ -111,15 +113,21 @@
         </div>
 
         <!-- Search Bar -->
-        <div class="hidden lg:flex items-center relative w-52">
+        <div class="hidden lg:flex items-center relative w-48">
             <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs"></i>
             <input id="searchInput" type="text" placeholder="Find relative..." 
                    class="w-full bg-slate-800/80 text-xs text-slate-200 placeholder-slate-400 pl-9 pr-3 py-2 rounded-xl border border-slate-700/70 focus:outline-none focus:border-emerald-500 transition" />
             <div id="searchResults" class="hidden absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50"></div>
         </div>
 
-        <!-- Device Session Badge & Action Controls -->
+        <!-- Device Session Badge, Settings & Action Controls -->
         <div class="flex items-center space-x-2">
+            <!-- Settings & Roles Manager Button -->
+            <button id="openSettingsModalBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-2.5 py-2 rounded-xl border border-slate-700 flex items-center space-x-1.5 transition" title="Roles & Accent Colors Manager">
+                <i class="fa-solid fa-gear text-amber-400"></i>
+                <span class="hidden md:inline font-semibold">Roles & Settings</span>
+            </button>
+
             <!-- Device Link Status Button -->
             <button id="openDeviceModalBtn" class="bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/60 text-xs px-2.5 py-2 rounded-xl flex items-center space-x-1.5 transition">
                 <i class="fa-solid fa-mobile-screen-button text-indigo-400"></i>
@@ -360,6 +368,55 @@
         </div>
     </div>
 
+    <!-- CUSTOM ROLES & SETTINGS MODAL -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-base">
+                        <i class="fa-solid fa-palette"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-100 text-base">Roles & Accent Colors Manager</h3>
+                        <p class="text-[11px] text-slate-400">Create custom family roles and choose card accent colors</p>
+                    </div>
+                </div>
+                <button id="closeSettingsModalBtn" class="text-slate-400 hover:text-slate-200 w-8 h-8 rounded-xl hover:bg-slate-800 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-5 text-xs text-slate-300">
+                <!-- Add New Role Form -->
+                <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3">
+                    <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wider">Create New Role</h4>
+                    <div class="flex items-center space-x-2">
+                        <input id="newRoleNameInput" type="text" placeholder="Role Title (e.g. In-Law, Founder)" 
+                               class="flex-1 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500 transition" />
+                        <input id="newRoleColorInput" type="color" value="#10b981" 
+                               class="w-9 h-9 bg-transparent border border-slate-700 rounded-xl cursor-pointer p-0.5" title="Pick Accent Color" />
+                        <button id="addRoleBtn" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs transition flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Existing Roles List -->
+                <div>
+                    <h4 class="font-bold text-slate-400 text-xs uppercase tracking-wider mb-2">Active Roles & Accent Colors</h4>
+                    <div id="rolesListContainer" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-900/50 border-t border-slate-800 flex items-center justify-end">
+                <button id="saveSettingsDoneBtn" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-5 py-2 rounded-xl shadow-lg transition">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- DEVICE / BROWSER LINKING MODAL -->
     <div id="deviceModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
@@ -438,14 +495,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-1 font-medium">Card Accent Color</label>
-                        <select id="editColor" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
-                            <option value="emerald">Emerald Green</option>
-                            <option value="sky">Sky Blue</option>
-                            <option value="purple">Royal Purple</option>
-                            <option value="rose">Rose Pink</option>
-                            <option value="amber">Amber Gold</option>
-                            <option value="slate">Slate Gray</option>
+                        <label class="block text-slate-400 mb-1 font-medium">Family Role & Accent Color</label>
+                        <select id="editRoleSelect" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
                         </select>
                     </div>
                 </div>
@@ -578,14 +629,20 @@
     <!-- MAIN APP JAVASCRIPT -->
     <script>
         /**
-         * State Model Structure & Device Linking
+         * State Model Structure & Local Storage
          */
-        const STORAGE_KEY = 'family_tree_data_v3';
+        const STORAGE_KEY = 'family_tree_data_v4';
         const DEVICE_KEY = 'family_tree_device_profile_v1';
 
         let appState = {
             title: "My Family Tree",
-            members: {}, // Keyed by member ID
+            customRoles: [
+                { name: "Primary Line", color: "#10b981" },
+                { name: "In-Law", color: "#f59e0b" },
+                { name: "Deceased Ancestor", color: "#64748b" },
+                { name: "Step-Family", color: "#a855f7" }
+            ],
+            members: {},
             transform: { x: 0, y: 0, zoom: 1 }
         };
 
@@ -594,9 +651,7 @@
             linkedPersonId: null
         };
 
-        // Selection state for Ctrl+S / Enter linking
-        let selectedMemberIds = []; // Array of selected member IDs in click order [Person A, Person B]
-        
+        let selectedMemberIds = []; // [Person A, Person B]
         let currentEditingId = null;
         let currentQuickAddTargetId = null;
         let confirmCallback = null;
@@ -607,16 +662,6 @@
         const svgConnectors = document.getElementById('svgConnectors');
         const nodesLayer = document.getElementById('nodesLayer');
         const emptyState = document.getElementById('emptyState');
-
-        // Color theme mapping
-        const ACCENT_CLASSES = {
-            emerald: { border: 'border-emerald-500/60', bg: 'bg-emerald-500/10', text: 'text-emerald-400', tag: 'bg-emerald-950/60 text-emerald-300 border-emerald-800/50' },
-            sky: { border: 'border-sky-500/60', bg: 'bg-sky-500/10', text: 'text-sky-400', tag: 'bg-sky-950/60 text-sky-300 border-sky-800/50' },
-            purple: { border: 'border-purple-500/60', bg: 'bg-purple-500/10', text: 'text-purple-400', tag: 'bg-purple-950/60 text-purple-300 border-purple-800/50' },
-            rose: { border: 'border-rose-500/60', bg: 'bg-rose-500/10', text: 'text-rose-400', tag: 'bg-rose-950/60 text-rose-300 border-rose-800/50' },
-            amber: { border: 'border-amber-500/60', bg: 'bg-amber-500/10', text: 'text-amber-400', tag: 'bg-amber-950/60 text-amber-300 border-amber-800/50' },
-            slate: { border: 'border-slate-600', bg: 'bg-slate-800/50', text: 'text-slate-300', tag: 'bg-slate-800 text-slate-300 border-slate-700' }
-        };
 
         /**
          * INIT & LOCAL STORAGE
@@ -653,6 +698,14 @@
                     appState = JSON.parse(saved);
                     if (!appState.members) appState.members = {};
                     if (!appState.title) appState.title = "My Family Tree";
+                    if (!appState.customRoles || appState.customRoles.length === 0) {
+                        appState.customRoles = [
+                            { name: "Primary Line", color: "#10b981" },
+                            { name: "In-Law", color: "#f59e0b" },
+                            { name: "Deceased Ancestor", color: "#64748b" },
+                            { name: "Step-Family", color: "#a855f7" }
+                        ];
+                    }
                     document.getElementById('treeTitleInput').value = appState.title;
                 }
             } catch (err) {
@@ -714,7 +767,6 @@
             viewport.addEventListener('mousedown', (e) => {
                 if (e.target.closest('.node-card') || e.target.closest('button') || e.target.closest('input')) return;
                 
-                // Clear selection if clicking canvas background without Ctrl key
                 if (!e.ctrlKey && !e.metaKey && selectedMemberIds.length > 0) {
                     selectedMemberIds = [];
                     updateSelectionUI();
@@ -742,7 +794,6 @@
                 }
             });
 
-            // Wheel zoom
             viewport.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const zoomFactor = 0.08;
@@ -798,25 +849,22 @@
         }
 
         /**
-         * GLOBAL KEYBOARD SHORTCUTS (CTRL+S / ENTER / ESC)
+         * GLOBAL KEYBOARD SHORTCUTS
          */
         function setupGlobalShortcuts() {
             window.addEventListener('keydown', (e) => {
-                // Check for Ctrl+S or Cmd+S
                 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
                     e.preventDefault();
                     triggerLinkModal();
                     return;
                 }
 
-                // Press Enter to trigger link when 2 items selected and no modal is open
                 if (e.key === 'Enter' && selectedMemberIds.length >= 2 && isNoModalOpen()) {
                     e.preventDefault();
                     triggerLinkModal();
                     return;
                 }
 
-                // Press Escape to clear selections
                 if (e.key === 'Escape') {
                     if (selectedMemberIds.length > 0) {
                         selectedMemberIds = [];
@@ -831,6 +879,7 @@
             return document.getElementById('linkModal').classList.contains('hidden') &&
                    document.getElementById('personModal').classList.contains('hidden') &&
                    document.getElementById('quickAddModal').classList.contains('hidden') &&
+                   document.getElementById('settingsModal').classList.contains('hidden') &&
                    document.getElementById('deviceModal').classList.contains('hidden');
         }
 
@@ -843,17 +892,15 @@
             if (isMultiSelect) {
                 const index = selectedMemberIds.indexOf(personId);
                 if (index > -1) {
-                    selectedMemberIds.splice(index, 1); // Deselect
+                    selectedMemberIds.splice(index, 1);
                 } else {
                     if (selectedMemberIds.length >= 2) {
-                        // Keep last selected as 1st, new as 2nd
                         selectedMemberIds = [selectedMemberIds[1], personId];
                     } else {
                         selectedMemberIds.push(personId);
                     }
                 }
             } else {
-                // Single select toggle
                 if (selectedMemberIds.length === 1 && selectedMemberIds[0] === personId) {
                     selectedMemberIds = [];
                 } else {
@@ -884,8 +931,13 @@
         }
 
         /**
-         * RENDER TREE & SVG CONNECTOR LINES
+         * RENDER TREE & DYNAMIC CUSTOM ROLE COLORS
          */
+        function getRoleObj(roleName) {
+            if (!appState.customRoles) return { name: "Primary Line", color: "#10b981" };
+            return appState.customRoles.find(r => r.name === roleName) || appState.customRoles[0] || { name: "Custom", color: "#10b981" };
+        }
+
         function renderTree() {
             nodesLayer.innerHTML = '';
             
@@ -897,14 +949,12 @@
             }
             showEmptyState(false);
 
-            // Render Nodes
             memberIds.forEach(id => {
                 const person = appState.members[id];
                 const cardEl = createNodeCardElement(person);
                 nodesLayer.appendChild(cardEl);
             });
 
-            // Render SVG Connectors
             renderConnectors();
             updateMemberCountBadge();
             updateDeviceBadgeUI();
@@ -919,27 +969,27 @@
             let numberBadge = '';
 
             if (selIndex === 0) {
-                ringClass = 'first-selected-ring border-amber-400';
+                ringClass = 'first-selected-ring';
                 numberBadge = `<span class="absolute -top-2.5 -left-2.5 bg-amber-500 text-slate-950 text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-lg">A</span>`;
             } else if (selIndex === 1) {
-                ringClass = 'second-selected-ring border-emerald-400';
+                ringClass = 'second-selected-ring';
                 numberBadge = `<span class="absolute -top-2.5 -left-2.5 bg-emerald-500 text-slate-950 text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-lg">B</span>`;
             }
 
-            // Is this card linked to the current device?
+            const roleObj = getRoleObj(person.role);
             const isThisDevice = (deviceProfile.linkedPersonId === person.id);
             const deviceTag = isThisDevice ? `<span class="text-[9px] bg-indigo-950/90 text-indigo-300 border border-indigo-700/80 px-1.5 py-0.5 rounded-md font-bold flex items-center space-x-1 shadow" title="${escapeHtml(deviceProfile.deviceName || 'Device')}"><i class="fa-solid fa-mobile-screen-button"></i> <span>THIS DEVICE</span></span>` : '';
 
-            card.className = `node-card absolute bg-slate-900/90 border-2 ${ringClass || ACCENT_CLASSES[person.color || 'emerald'].border} rounded-2xl p-3 shadow-xl w-56 cursor-pointer flex flex-col justify-between group`;
+            card.className = `node-card absolute bg-slate-900/90 border-2 ${ringClass} rounded-2xl p-3 shadow-xl w-56 cursor-pointer flex flex-col justify-between group`;
             card.style.left = `${person.x || 0}px`;
             card.style.top = `${person.y || 0}px`;
+            card.style.borderColor = ringClass ? '' : roleObj.color;
 
             const avatarEmoji = person.avatar || (person.gender === 'female' ? '👩' : person.gender === 'male' ? '👨' : '👤');
             const lifespan = (person.birthYear || person.deathYear) 
                 ? `${person.birthYear || '?'} – ${person.deathYear || 'Present'}`
                 : '';
 
-            // Badge tags for adopted / step child relationships
             let customTag = '';
             if (person.isAdopted) {
                 customTag = `<span class="text-[9px] bg-purple-950/80 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded-md font-bold">Adopted</span>`;
@@ -950,9 +1000,8 @@
             card.innerHTML = `
                 ${numberBadge}
                 
-                <!-- Card Header -->
                 <div class="flex items-start space-x-2.5">
-                    <div class="w-10 h-10 rounded-xl ${ACCENT_CLASSES[person.color || 'emerald'].bg} border ${ACCENT_CLASSES[person.color || 'emerald'].border} flex items-center justify-center text-xl shrink-0 shadow-inner">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner" style="background-color: ${roleObj.color}20; border: 1px solid ${roleObj.color}60;">
                         ${avatarEmoji}
                     </div>
                     <div class="flex-1 min-w-0 pr-1">
@@ -961,7 +1010,7 @@
                             ${deviceTag}
                             ${customTag}
                         </div>
-                        ${person.title ? `<p class="text-[10px] ${ACCENT_CLASSES[person.color || 'emerald'].text} truncate font-semibold">${escapeHtml(person.title)}</p>` : ''}
+                        <p class="text-[10px] font-semibold truncate mt-0.5" style="color: ${roleObj.color}">${escapeHtml(person.role || roleObj.name)}</p>
                         ${lifespan ? `<p class="text-[10px] text-slate-400 mt-0.5">${lifespan}</p>` : ''}
                     </div>
                 </div>
@@ -971,7 +1020,6 @@
                     ${escapeHtml(person.notes)}
                 </div>` : ''}
 
-                <!-- Action Toolbar -->
                 <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
                     <button class="quick-add-btn text-slate-300 hover:text-emerald-400 bg-slate-800/80 hover:bg-slate-800 px-2 py-1 rounded-lg border border-slate-700/60 transition flex items-center space-x-1" title="Spawn Relative (+)">
                         <i class="fa-solid fa-plus text-emerald-400"></i>
@@ -989,14 +1037,12 @@
                 </div>
             `;
 
-            // CARD MOUSE DOWN & DRAG LOGIC
             let isDraggingCard = false;
             let startX = 0, startY = 0;
 
             card.addEventListener('mousedown', (e) => {
                 if (e.target.closest('button')) return;
 
-                // Handle Selection
                 handleNodeClick(person.id, e);
 
                 isDraggingCard = true;
@@ -1018,7 +1064,7 @@
                     startX = moveEvent.clientX;
                     startY = moveEvent.clientY;
 
-                    renderConnectors(); // Realtime line updates
+                    renderConnectors();
                 };
 
                 const onMouseUp = () => {
@@ -1035,7 +1081,6 @@
                 window.addEventListener('mouseup', onMouseUp);
             });
 
-            // Action Buttons
             card.querySelector('.quick-add-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 openQuickAddModal(person.id);
@@ -1055,7 +1100,7 @@
         }
 
         /**
-         * SVG CONNECTING LINES WITH RELATIONSHIP LABELS
+         * SVG CONNECTORS
          */
         function renderConnectors() {
             const defs = svgConnectors.querySelector('defs').outerHTML;
@@ -1063,14 +1108,12 @@
 
             const CARD_WIDTH = 224;
             const CARD_HEIGHT = 120;
-
             const processedPairs = new Set();
 
             Object.values(appState.members).forEach(person => {
                 const px = person.x || 0;
                 const py = person.y || 0;
 
-                // 1. Biological Children Connectors
                 (person.childIds || []).forEach(childId => {
                     const child = appState.members[childId];
                     if (child) {
@@ -1084,12 +1127,10 @@
 
                         const deltaY = Math.abs(endY - startY) / 2;
                         const pathData = `M ${startX} ${startY} C ${startX} ${startY + deltaY}, ${endX} ${endY - deltaY}, ${endX} ${endY}`;
-
                         pathsHtml += `<path d="${pathData}" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" marker-end="url(#arrowHead)" opacity="0.85" />`;
                     }
                 });
 
-                // 2. Adopted Children Connectors
                 (person.adoptedChildIds || []).forEach(childId => {
                     const child = appState.members[childId];
                     if (child) {
@@ -1113,7 +1154,6 @@
                     }
                 });
 
-                // 3. Step Children Connectors
                 (person.stepChildIds || []).forEach(childId => {
                     const child = appState.members[childId];
                     if (child) {
@@ -1137,7 +1177,6 @@
                     }
                 });
 
-                // 4. Spouse / Partner Connectors
                 (person.spouseIds || []).forEach(spouseId => {
                     const spouse = appState.members[spouseId];
                     if (spouse) {
@@ -1221,7 +1260,6 @@
 
             if (!p1 || !p2) return;
 
-            // Clean existing direct connections between these two first
             unlinkTwoMembers(p1Id, p2Id);
 
             if (relType === 'parent-child') {
@@ -1276,9 +1314,6 @@
                     p1.parentIds = [newParent.id];
                     p2.parentIds = [newParent.id];
                 }
-
-            } else if (relType === 'unlink') {
-                // Handled above
             }
 
             document.getElementById('linkModal').classList.add('hidden');
@@ -1306,6 +1341,73 @@
                 p2.spouseIds = (p2.spouseIds || []).filter(i => i !== id1);
                 p2.parentIds = (p2.parentIds || []).filter(i => i !== id1);
             }
+        }
+
+        /**
+         * CUSTOM ROLES & ACCENT COLORS MANAGER
+         */
+        function openSettingsModal() {
+            renderRolesListInSettings();
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function renderRolesListInSettings() {
+            const container = document.getElementById('rolesListContainer');
+            container.innerHTML = '';
+
+            appState.customRoles.forEach((role, idx) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700/60 text-xs';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2.5">
+                        <span class="w-4 h-4 rounded-full border border-slate-900 shadow" style="background-color: ${role.color};"></span>
+                        <span class="font-bold text-slate-200">${escapeHtml(role.name)}</span>
+                    </div>
+                    ${appState.customRoles.length > 1 ? `
+                    <button type="button" onclick="deleteCustomRole(${idx})" class="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-700 transition" title="Delete Role">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>` : ''}
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addCustomRole() {
+            const nameInput = document.getElementById('newRoleNameInput');
+            const colorInput = document.getElementById('newRoleColorInput');
+            const name = nameInput.value.trim();
+            const color = colorInput.value;
+
+            if (!name) return;
+            if (appState.customRoles.some(r => r.name.toLowerCase() === name.toLowerCase())) {
+                alert("A role with this name already exists.");
+                return;
+            }
+
+            appState.customRoles.push({ name, color });
+            nameInput.value = '';
+            renderRolesListInSettings();
+            saveStateToStorage();
+            renderTree();
+        }
+
+        function deleteCustomRole(index) {
+            appState.customRoles.splice(index, 1);
+            renderRolesListInSettings();
+            saveStateToStorage();
+            renderTree();
+        }
+
+        function populateRolesSelectDropdown(selectedRoleName) {
+            const select = document.getElementById('editRoleSelect');
+            select.innerHTML = '';
+            appState.customRoles.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.name;
+                opt.textContent = `${r.name}`;
+                if (r.name === selectedRoleName) opt.selected = true;
+                select.appendChild(opt);
+            });
         }
 
         /**
@@ -1370,16 +1472,17 @@
          */
         function createNewMember(data = {}) {
             const id = 'person_' + Math.random().toString(36).substring(2, 9);
+            const defaultRole = appState.customRoles[0] ? appState.customRoles[0].name : "Primary Line";
             const newMember = {
                 id,
                 name: data.name || "New Person",
                 gender: data.gender || "female",
+                role: data.role || defaultRole,
                 birthYear: data.birthYear || "",
                 deathYear: data.deathYear || "",
                 title: data.title || "",
                 notes: data.notes || "",
                 avatar: data.avatar || "",
-                color: data.color || "emerald",
                 parentIds: data.parentIds || [],
                 childIds: data.childIds || [],
                 adoptedChildIds: data.adoptedChildIds || [],
@@ -1423,7 +1526,7 @@
                 newMember = createNewMember({
                     name: `Adopted Child of ${target.name}`,
                     parentIds: [target.id],
-                    color: 'purple',
+                    role: appState.customRoles[3] ? appState.customRoles[3].name : "Step-Family",
                     x: target.x,
                     y: target.y + OFFSET_Y
                 });
@@ -1435,7 +1538,7 @@
                 newMember = createNewMember({
                     name: `Spouse of ${target.name}`,
                     spouseIds: [target.id],
-                    color: 'rose',
+                    role: appState.customRoles[1] ? appState.customRoles[1].name : "In-Law",
                     x: target.x + OFFSET_X,
                     y: target.y
                 });
@@ -1446,7 +1549,6 @@
                 newMember = createNewMember({
                     name: `Parent of ${target.name}`,
                     childIds: [target.id],
-                    color: 'sky',
                     x: target.x,
                     y: target.y - OFFSET_Y
                 });
@@ -1460,7 +1562,7 @@
         }
 
         /**
-         * DEVICE / LOCAL PERSONA MODAL
+         * DEVICE MODAL
          */
         function openDeviceModal() {
             const nameInput = document.getElementById('deviceNameInput');
@@ -1499,13 +1601,13 @@
 
             document.getElementById('editName').value = person.name || '';
             document.getElementById('editGender').value = person.gender || 'female';
-            document.getElementById('editColor').value = person.color || 'emerald';
             document.getElementById('editBirthYear').value = person.birthYear || '';
             document.getElementById('editDeathYear').value = person.deathYear || '';
             document.getElementById('editTitle').value = person.title || '';
             document.getElementById('editAvatar').value = person.avatar || '';
             document.getElementById('editNotes').value = person.notes || '';
 
+            populateRolesSelectDropdown(person.role);
             renderRelationshipsListInModal(person);
             document.getElementById('personModal').classList.remove('hidden');
         }
@@ -1560,7 +1662,7 @@
 
             person.name = document.getElementById('editName').value.trim() || 'Unnamed Relative';
             person.gender = document.getElementById('editGender').value;
-            person.color = document.getElementById('editColor').value;
+            person.role = document.getElementById('editRoleSelect').value;
             person.birthYear = document.getElementById('editBirthYear').value.trim();
             person.deathYear = document.getElementById('editDeathYear').value.trim();
             person.title = document.getElementById('editTitle').value.trim();
@@ -1608,11 +1710,20 @@
          * SETUP EVENT LISTENERS
          */
         function setupEventListeners() {
-            // Tree Title
             document.getElementById('treeTitleInput').addEventListener('change', (e) => {
                 appState.title = e.target.value || "My Family Tree";
                 saveStateToStorage();
             });
+
+            // Settings Modal
+            document.getElementById('openSettingsModalBtn').addEventListener('click', openSettingsModal);
+            document.getElementById('closeSettingsModalBtn').addEventListener('click', () => {
+                document.getElementById('settingsModal').classList.add('hidden');
+            });
+            document.getElementById('saveSettingsDoneBtn').addEventListener('click', () => {
+                document.getElementById('settingsModal').classList.add('hidden');
+            });
+            document.getElementById('addRoleBtn').addEventListener('click', addCustomRole);
 
             // Device Modal
             document.getElementById('openDeviceModalBtn').addEventListener('click', openDeviceModal);
@@ -1821,13 +1932,19 @@
             appState = {
                 title: "Imperial Family Legacy",
                 transform: { x: 0, y: 0, zoom: 1 },
+                customRoles: [
+                    { name: "Primary Line", color: "#10b981" },
+                    { name: "In-Law", color: "#f59e0b" },
+                    { name: "Deceased Ancestor", color: "#64748b" },
+                    { name: "Step-Family", color: "#a855f7" }
+                ],
                 members: {
-                    "p1": { id: "p1", name: "Arthur Pendelton", gender: "male", birthYear: "1938", deathYear: "2015", title: "Patriarch", notes: "Founded the ancestral house.", color: "sky", avatar: "👴", childIds: ["p3"], spouseIds: ["p2"], x: -160, y: 0 },
-                    "p2": { id: "p2", name: "Eleanor Pendelton", gender: "female", birthYear: "1942", deathYear: "", title: "Matriarch", color: "rose", avatar: "👵", childIds: ["p3"], spouseIds: ["p1"], x: 130, y: 0 },
-                    "p3": { id: "p3", name: "Robert Pendelton", gender: "male", birthYear: "1968", deathYear: "", title: "Civil Engineer", color: "emerald", avatar: "👨", parentIds: ["p1", "p2"], childIds: ["p5"], adoptedChildIds: ["p6"], spouseIds: ["p4"], x: -160, y: 220 },
-                    "p4": { id: "p4", name: "Sarah Jenkins", gender: "female", birthYear: "1971", deathYear: "", title: "Architect", color: "rose", avatar: "👩", childIds: ["p5"], spouseIds: ["p3"], x: 130, y: 220 },
-                    "p5": { id: "p5", name: "Alex Pendelton", gender: "male", birthYear: "1998", deathYear: "", title: "Software Engineer", notes: "Created this tree app!", color: "amber", avatar: "🧑‍💻", parentIds: ["p3", "p4"], x: -220, y: 440 },
-                    "p6": { id: "p6", name: "Maya Pendelton", gender: "female", birthYear: "2004", deathYear: "", title: "Artist & Musician", color: "purple", avatar: "🎨", parentIds: ["p3"], isAdopted: true, x: 80, y: 440 }
+                    "p1": { id: "p1", name: "Arthur Pendelton", gender: "male", role: "Deceased Ancestor", birthYear: "1938", deathYear: "2015", title: "Patriarch", notes: "Founded the ancestral house.", avatar: "👴", childIds: ["p3"], spouseIds: ["p2"], x: -160, y: 0 },
+                    "p2": { id: "p2", name: "Eleanor Pendelton", gender: "female", role: "Deceased Ancestor", birthYear: "1942", deathYear: "2020", title: "Matriarch", avatar: "👵", childIds: ["p3"], spouseIds: ["p1"], x: 130, y: 0 },
+                    "p3": { id: "p3", name: "Robert Pendelton", gender: "male", role: "Primary Line", birthYear: "1968", deathYear: "", title: "Civil Engineer", avatar: "👨", parentIds: ["p1", "p2"], childIds: ["p5"], adoptedChildIds: ["p6"], spouseIds: ["p4"], x: -160, y: 220 },
+                    "p4": { id: "p4", name: "Sarah Jenkins", gender: "female", role: "In-Law", birthYear: "1971", deathYear: "", title: "Architect", avatar: "👩", childIds: ["p5"], spouseIds: ["p3"], x: 130, y: 220 },
+                    "p5": { id: "p5", name: "Alex Pendelton", gender: "male", role: "Primary Line", birthYear: "1998", deathYear: "", title: "Software Engineer", notes: "Created this tree app!", avatar: "🧑‍💻", parentIds: ["p3", "p4"], x: -220, y: 440 },
+                    "p6": { id: "p6", name: "Maya Pendelton", gender: "female", role: "Step-Family", birthYear: "2004", deathYear: "", title: "Artist & Musician", avatar: "🎨", parentIds: ["p3"], isAdopted: true, x: 80, y: 440 }
                 }
             };
 
@@ -1864,9 +1981,6 @@
             document.getElementById('confirmModal').classList.add('hidden');
         });
 
-        /**
-         * UTILS
-         */
         function escapeHtml(text) {
             if (!text) return '';
             return String(text)
